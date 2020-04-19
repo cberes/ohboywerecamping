@@ -1,0 +1,32 @@
+group 'com.ohboywerecamping'
+version projectVersion
+
+apply plugin: 'java'
+apply plugin: 'checkstyle'
+apply plugin: 'idea'
+
+sourceCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation('org.junit.jupiter:junit-jupiter:5.6.2')
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'org.mockito:mockito-core:3.3.3'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+checkstyle {
+    checkstyleMain.exclude '**/module-info.java'
+    configDir = file("$rootDir/config/checkstyle")
+    toolVersion = '8.2'
+    maxErrors = 0
+    maxWarnings = 0
+}
