@@ -1,5 +1,5 @@
 <script>
-import store from '@/store'
+import { mapActions } from 'vuex'
 
 export default {
   name: 'campground',
@@ -13,8 +13,9 @@ export default {
     this.loadCampground()
   },
   methods: {
-    loadCampground (settings, campgroundService) {
-      store.dispatch('campgrounds/fetchCampground')
+    ...mapActions('campgrounds', ['fetchCampground']),
+    loadCampground () {
+      this.fetchCampground()
         .then(result => (this.campground = result))
         .catch(reason => (this.error = reason.message))
     }

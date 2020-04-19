@@ -1,4 +1,4 @@
-import campgroundService from '../services/MockCampgroundService'
+import campgroundService from './mock-campground-service'
 
 // TODO get the actual campground ID
 const campgroundId = 2

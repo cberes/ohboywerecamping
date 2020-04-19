@@ -1,6 +1,6 @@
 <script>
-import campsiteService from '../services/MockCampsiteService'
-import AvailabilityCalendar from './AvailabilityCalendar.vue'
+import campsiteService from './mock-campsite-service'
+import AvailabilityCalendar from './AvailabilityCalendar'
 import moment from 'moment'
 
 export default {

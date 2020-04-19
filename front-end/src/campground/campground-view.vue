@@ -1,6 +1,6 @@
 <script>
-import Layout from './main'
-import Campground from '@/components/Campground'
+import Layout from '@/common/main'
+import Campground from './Campground'
 
 export default {
   components: { Layout, Campground }

@@ -1,7 +1,7 @@
 <script>
 import moment from 'moment'
-import availabilityService from '../services/MockAvailabilityService'
-import Calendar from './Calendar.vue'
+import availabilityService from './mock-availability-service'
+import Calendar from '@/common/Calendar'
 
 export default {
   name: 'availability-calendar',

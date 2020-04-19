@@ -1,8 +1,8 @@
 <script>
-import campgroundService from '../services/MockCampgroundService'
-import availabilityService from '../services/MockAvailabilityService'
-import CampsiteListItem from './CampsiteListItem'
 import moment from 'moment'
+import campgroundService from '../campground/mock-campground-service'
+import availabilityService from './mock-availability-service'
+import CampsiteListItem from './CampsiteListItem'
 
 export default {
   components: { CampsiteListItem },

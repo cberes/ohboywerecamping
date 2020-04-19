@@ -1,5 +1,5 @@
 <script>
-import store from '@/store'
+import { mapActions } from 'vuex'
 
 export default {
   props: {
@@ -19,8 +19,9 @@ export default {
     }
   },
   methods: {
+    ...mapActions('campgrounds', ['fetchCampground']),
     loadCampground () {
-      store.dispatch('campgrounds/fetchCampground')
+      this.fetchCampground()
         .then(result => (this.campground = result))
         .catch(console.error)
     }

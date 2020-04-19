@@ -1,7 +1,7 @@
 <script>
-import Footer from '@/components/footer'
-import Header from '@/components/header'
-import NavBar from '@/components/nav-bar'
+import Footer from './footer'
+import Header from './header'
+import NavBar from './nav-bar'
 
 export default {
   components: { Footer, Header, NavBar },

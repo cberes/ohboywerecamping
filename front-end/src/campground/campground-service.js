@@ -1,4 +1,4 @@
-import httpService from './HttpService'
+import httpService from '@/common/http-service'
 
 const baseUrl = '/api/campgrounds'
 

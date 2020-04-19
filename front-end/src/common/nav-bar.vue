@@ -1,10 +1,5 @@
 <script>
 export default {
-  data () {
-    return {
-      demo: window.location.hostname === 'awayfromho.me'
-    }
-  }
 }
 </script>
 

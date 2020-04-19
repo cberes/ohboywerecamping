@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import campgroundModule from './campground'
+import campgroundModule from '@/campground/campground-store'
 
 Vue.use(Vuex)
 
