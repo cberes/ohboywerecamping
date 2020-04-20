@@ -1,0 +1,53 @@
+import java.text.SimpleDateFormat
+
+group 'com.ohboywerecamping'
+version projectVersion
+
+apply plugin: 'java'
+apply plugin: 'idea'
+
+
+sourceCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':back-end')
+    implementation platform('software.amazon.awssdk:bom:2.5.29')
+    implementation 'software.amazon.awssdk:dynamodb'
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
+    implementation 'com.amazonaws:aws-lambda-java-events:2.2.7'
+    runtimeOnly 'com.amazonaws:aws-lambda-java-log4j2:1.1.0'
+    testImplementation('org.junit.jupiter:junit-jupiter:5.6.2')
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'org.mockito:mockito-core:3.3.3'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+static def bundleSuffix() {
+    SimpleDateFormat format = new SimpleDateFormat('yyyyMMddHHmmss')
+    InetAddress.getLocalHost().getHostName() + '-' + format.format(new Date())
+}
+
+task lambdaFunctionBundle(type: Zip) {
+    archiveFileName = "source-bundle-${bundleSuffix()}.zip"
+    from compileJava
+    from processResources
+}
+
+task lambdaLayerBundle(type: Zip) {
+    archiveFileName = "lambda-layer-${bundleSuffix()}.zip"
+    into('lib') {
+        from configurations.runtimeClasspath
+    }
+}
+
+build.dependsOn lambdaFunctionBundle, lambdaLayerBundle

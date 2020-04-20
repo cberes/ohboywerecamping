@@ -1,0 +1,412 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Serverless web app"
+
+Parameters:
+  AppPrefix:
+    Type: String
+    Description: Prefix for resource names (preferably kebab-case)
+
+  EnvironmentName:
+    Type: String
+    Description: Short, alphabetic-only name for environment (e.g., test, prod, gwashington)
+
+  BusinessName:
+    Type: String
+    Description: >-
+      Name of the business. Will be used in things like the email-verification email.
+
+  StagingBucketName:
+    Type: String
+    Description: >-
+      The name of an S3 bucket that can be used for storing zip files that hold the
+      compiled code and jars that the Lambda functions use.
+
+  LambdaLayerBundleName:
+    Type: String
+    Description: >-
+      The file name of the bundle for the lambda layer; this is a .zip file produced by
+      the build. This template assumes it's been staged in s3://[StagingBucketName]/web-app-dist
+
+  LambdaBundleName:
+    Type: String
+    Description: >-
+      The file name of the bundle for the lambda functions; this is a .zip file produced by
+      the build. This template assumes it's been staged in s3://[StagingBucketName]/web-app-dist
+
+Conditions:
+
+  InLiveEnv: !Equals [!Ref EnvironmentName, live]
+
+  InTestEnv: !Not [!Equals [!Ref EnvironmentName, live]]
+      
+Resources:
+
+  WebAppLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['_', [!Join ['_', !Split ['-', !Ref AppPrefix]], 'lambda_role', !Ref EnvironmentName]]
+      MaxSessionDuration: 43200 # 12 Hours
+      Path: !Sub '/${AppPrefix}/'
+
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+                - lambda.amazonaws.com
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:user/cberes'
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        # Canned policies that allow our lambda functions to log to Cloudwatch and
+        # XRay and run in our VPC
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        # The policy document specifies what our Lambda functions
+        # (or anything else that assumes the role) are allowed to do in AWS.
+        - PolicyName: !Join ['_', [!Join ['_', !Split ['-', !Ref AppPrefix]], 'lambda_policies']]
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:ConditionCheckItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !GetAtt CampgroundTable.Arn
+                  - !GetAtt AreaTable.Arn
+                  - !GetAtt CampsiteTable.Arn
+                  - !GetAtt ReservationTable.Arn
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AppPrefix}-*-${EnvironmentName}'
+
+  CampgroundTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Join ['_', ["CAMPGROUND", !Ref EnvironmentName]]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "ID"
+          AttributeType: "S"
+      KeySchema:
+        AttributeName: "ID"
+        KeyType: "HASH"
+
+  AreaTable:
+    Type: AWS::DynamoDB::Table
+    DependsOn: "CampgroundTable"
+    Properties:
+      TableName: !Join ['_', ["AREA", !Ref EnvironmentName]]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "ID"
+          AttributeType: "S"
+        - AttributeName: "CAMPGROUND_ID"
+          AttributeType: "S"
+      KeySchema:
+        AttributeName: "ID"
+        KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "campground-id"
+          KeySchema:
+            - AttributeName: "CAMPGROUND_ID"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+
+  CampsiteTable:
+    Type: AWS::DynamoDB::Table
+    DependsOn: "AreaTable"
+    Properties:
+      TableName: !Join ['_', ["CAMPSITE", !Ref EnvironmentName]]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "ID"
+          AttributeType: "S"
+        - AttributeName: "CAMPGROUND_ID"
+          AttributeType: "S"
+        - AttributeName: "AREA_ID"
+          AttributeType: "S"
+      KeySchema:
+        AttributeName: "ID"
+        KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "campground-id"
+          KeySchema:
+            - AttributeName: "CAMPGROUND_ID"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+        - IndexName: "area-id"
+          KeySchema:
+            - AttributeName: "AREA_ID"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+
+  ReservationTable:
+    Type: AWS::DynamoDB::Table
+    DependsOn: "CampsiteTable"
+    Properties:
+      TableName: !Join ['_', ["RESERVATION", !Ref EnvironmentName]]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "ID"
+          AttributeType: "S"
+        - AttributeName: "CAMPSITE_ID"
+          AttributeType: "S"
+        - AttributeName: "STARTING"
+          AttributeType: "S"
+        - AttributeName: "ENDING"
+          AttributeType: "S"
+      KeySchema:
+        AttributeName: "ID"
+        KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "campsite-id-and-date"
+          KeySchema:
+            - AttributeName: "CAMPSITE_ID"
+              KeyType: "HASH"
+            - AttributeName: "STARTING"
+              KeyType: "RANGE"
+            - AttributeName: "ENDING"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+      TimeToLiveSpecification:
+        AttributeName: "EXPIRE_ON"
+        Enabled: InTestEnv
+
+  WebAppUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: WebApp
+      AccountRecoverySetting: 
+        - Priority: 1
+          Name: verified_email
+      AutoVerifiedAttributes: 
+        - email
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      EmailVerificationSubject: !Sub '${BusinessName} verification link'
+      EmailVerificationMessage: >-
+        Please click the link below to verify your email address. {##Verify Email##}
+      EnabledMfas: 
+        - SOFTWARE_TOKEN_MFA
+      MfaConfiguration: ON
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: True
+          RequireNumbers: True
+          RequireSymbols: True
+          RequireUppercase: True
+          TemporaryPasswordValidityDays: 7
+      Schema: 
+        - Name: email
+          AttributeDataType: String
+          DeveloperOnlyAttribute: False
+          Mutable: True
+          Required: True
+      UsernameConfiguration:
+        CaseSensitive: False
+      UserPoolAddOns:
+        AdvancedSecurityMode: OFF
+
+  WebAppUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: String
+      UserPoolId: !Ref WebAppUserPool
+      GenerateSecret: False
+      ExplicitAuthFlows:
+        - ALLOW_CUSTOM_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      RefreshTokenValidity: 30
+      SupportedIdentityProviders:
+        - COGNITO
+        - Facebook
+        - Google
+        - LoginWithAmazon
+      ReadAttributes:
+        - email
+        - email verified
+        - name
+        - nickname
+        - given name
+        - family name
+        - profile
+        - preferred username
+
+  CompileClassPathLambdaLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      Description: Java dependencies for the Serverless web app lambda functions.
+      LayerName: !Join ['-', ['web-app-deps', !Ref EnvironmentName]]
+      CompatibleRuntimes:
+        - java8
+      Content:
+        S3Bucket: !Ref StagingBucketName
+        S3Key: !Join ['/', ['web-app-dist', !Ref LambdaLayerBundleName]]
+
+  # Lambda Function that creates reservations for campsites
+  TakeReservationLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Join ['-', [!Ref AppPrefix, 'take-reservation', !Ref EnvironmentName]]
+      Description: Receives incoming HTTP POSTs from front end
+      Code:
+        S3Bucket: !Ref StagingBucketName
+        S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
+      Handler: com.ohboywerecamping.webapp.reservation.TakeReservationLambda::handleRequest
+      Layers:
+        - !Ref CompileClassPathLambdaLayer
+      MemorySize: 1024 # megabytes
+      Role: !GetAtt WebAppLambdaRole.Arn
+      Runtime: java11
+      Timeout: 120
+      TracingConfig:
+        Mode: Active
+
+  TakeReservationLambdaAPIGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt TakeReservationLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TakeReservationRestAPI}/*/*/*'
+
+  TakeReservationRestAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Join ['-', [!Ref AppPrefix, 'api', !Ref EnvironmentName]]
+      Description: >-
+        Routes HTTP requests from the front-end to the lambda functions.
+      EndpointConfiguration:
+        Types:
+          - EDGE
+      FailOnWarnings: true
+      # See https://webmasters.stackexchange.com/questions/31750/
+      # The reasons 860 bytes is the minimum size for compression is twofold:
+      # 1. The overhead of compressing an object under 860 bytes outweighs performance gain.
+      # 2. Objects under 860 bytes can be transmitted via a single packet anyway,
+      #    so there isn't a compelling reason to compress them.
+      MinimumCompressionSize: 860
+
+  TakeReservationAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties: 
+      Name: TakeReservation
+      RestApiId: !Ref TakeReservationRestAPI
+      Type: COGNITO_USER_POOLS
+      ProviderARNs: 
+        - !GetAtt WebAppUserPool.Arn
+      AuthorizerCredentials: !GetAtt WebAppLambdaRole.Arn
+      AuthorizerResultTtlInSeconds: 300
+      IdentitySource: Authorization
+
+  TakeReservationAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      PathPart: reservation
+      RestApiId: !Ref TakeReservationRestAPI
+
+  TakeReservationCORS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: CORS for Handle Reservation Event
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ResourceId: !Ref TakeReservationAPIResource
+      RestApiId: !Ref TakeReservationRestAPI
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
+  TakeReservationAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Handle Reservation Event
+      HttpMethod: POST
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref TakeReservationAuthorizer
+      #ResourceId: !GetAtt TakeReservationRestAPI.RootResourceId
+      ResourceId: !Ref TakeReservationAPIResource
+      RestApiId: !Ref TakeReservationRestAPI
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
+          - { Lambda: !GetAtt TakeReservationLambda.Arn }
+
+  TakeReservationDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref TakeReservationRestAPI
+    DependsOn:
+      - TakeReservationAPIMethod
+
+  TakeReservationStageV1:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref TakeReservationDeployment
+      RestApiId: !Ref TakeReservationRestAPI
+      StageName: v1
+      TracingEnabled: true
+
+Outputs:
+
+  CognitoUserPoolId:
+    Description: Information about the value
+    Value: !Ref WebAppUserPool
+
+  CognitoUserPoolClientId:
+    Description: Information about the value
+    Value: !Ref WebAppUserPoolClient
+
+  ApiInvokeUrl:
+    Description: Information about the value
+    Value: !Sub 'https://${TakeReservationRestAPI}.execute-api.${AWS::Region}.amazonaws.com/${TakeReservationStageV1}'

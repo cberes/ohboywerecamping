@@ -1,2 +1,3 @@
 include 'front-end'
 include 'back-end'
+include 'serverless-web-app'
