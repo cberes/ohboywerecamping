@@ -23,6 +23,7 @@ test {
         events "passed", "skipped", "failed"
     }
 }
+
 checkstyle {
     checkstyleMain.exclude '**/module-info.java'
     configDir = file("$rootDir/config/checkstyle")

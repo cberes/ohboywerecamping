@@ -7,10 +7,8 @@ import com.ohboywerecamping.campground.InMemoryCampgroundRepository;
 import com.ohboywerecamping.campsite.CampsiteRepository;
 import com.ohboywerecamping.campsite.InMemoryCampsiteRepository;
 import com.ohboywerecamping.customer.InMemoryCustomerRepository;
-import com.ohboywerecamping.reservation.InMemoryReservationRepository;
-import com.ohboywerecamping.domain.CampgroundAvailability;
-import com.ohboywerecamping.domain.CampsiteAvailability;
 import com.ohboywerecamping.domain.*;
+import com.ohboywerecamping.reservation.InMemoryReservationRepository;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
