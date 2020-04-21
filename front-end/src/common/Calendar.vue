@@ -30,7 +30,7 @@ export default {
   data () {
     return {
       days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-      selected: {}
+      selected: []
     }
   },
   computed: {
@@ -54,7 +54,7 @@ export default {
         while (index < 7) {
           const day = moment(firstDayOfWeek).add({ days: index - emptyDays })
           const value = day.month() === firstDayOfWeek.month() ? day : null
-          days.push({ index: index++, value: value })
+          days.push({ index: index++, value })
           done = !value
         }
         daysByWeek.push({ index: daysByWeek.length, days: days })
@@ -86,19 +86,37 @@ export default {
       }
 
       const key = date.format('Y-MM-DD')
-      return this.selected[key] === true
+      return this.selected.includes(key)
     },
     toggleSelected (date) {
       if (!date || this.selectMode === 'NONE') {
         return
       }
 
-      if (this.selectMode === 'SINGLE') {
-        this.$set(this, 'selected', {})
+      const key = date.format('Y-MM-DD')
+      if (!this.info[key] || !this.info[key].selectable) {
+        return
       }
 
-      const key = date.format('Y-MM-DD')
-      this.$set(this.selected, key, !this.selected[key])
+      if (this.selectMode === 'SINGLE' && this.selected.length > 0) {
+        this.$emit('unselected', this.selected[0])
+        this.selected.splice(0, 1)
+      }
+
+      const index = this.selected.indexOf(key)
+      if (index < 0) {
+        this.selected.push(key)
+        this.$emit('selected', key)
+      } else {
+        this.selected.splice(index, 1)
+        this.$emit('unselected', key)
+      }
+    },
+    selectedCount () {
+      return this.selected.length
+    },
+    selectedDays () {
+      return this.selected.slice()
     }
   }
 }
@@ -113,7 +131,7 @@ export default {
       <th :key="day" v-for="day in days">{{day.substring(0, 3)}}</th>
     </tr>
     <tr :key="week.index" v-for="week in weeks">
-      <td :key="day.index" v-for="day in week.days" @click="toggleSelected(day.value)" :class="{ selected: isSelected(day.value) }">
+      <td :key="day.index" v-for="day in week.days" @click="toggleSelected(day.value, )" :class="{ selected: isSelected(day.value) }">
         <span class="date">{{ formatDate(day.value) }}</span>
         <span class="info" :class="infoClass(day.value)" v-html="infoValue(day.value)"></span>
       </td>

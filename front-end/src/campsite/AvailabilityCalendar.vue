@@ -64,7 +64,8 @@ export default {
     mergeStatus (acc, value) {
       acc[value.date] = {
         cssClass: this.cssClass(value.status),
-        value: value.status.charAt(0)
+        value: value.status.charAt(0),
+        selectable: value.status === 'AVAILABLE'
       }
       return acc
     },
@@ -79,6 +80,18 @@ export default {
         default:
           return ''
       }
+    },
+    selectedCount () {
+      return this.$refs.cal.selectedCount()
+    },
+    selectedDays () {
+      return this.$refs.cal.selectedDay()
+    },
+    selected (date) {
+      this.$emit('selected', date)
+    },
+    unselected (date) {
+      this.$emit('unselected', date)
     }
   },
   computed: {
@@ -92,7 +105,14 @@ export default {
 <template>
   <div>
     <el-button style="float:left" icon="el-icon-arrow-left" circle @click="previousMonth"></el-button>
-    <calendar style="float:left" :month="currentMonth.month()" :year="currentMonth.year()" :info="statusByDay" :selectMode="selectMode"></calendar>
+    <calendar style="float:left"
+              :month="currentMonth.month()"
+              :year="currentMonth.year()"
+              :info="statusByDay"
+              :selectMode="selectMode"
+              @selected="selected"
+              @unselected="unselected"
+              ref="cal"></calendar>
     <el-button style="float:left" icon="el-icon-arrow-right" circle @click="nextMonth"></el-button>
     <div style="clear:left"></div>
   </div>
