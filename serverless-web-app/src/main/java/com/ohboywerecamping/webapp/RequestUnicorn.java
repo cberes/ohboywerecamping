@@ -103,7 +103,7 @@ public class RequestUnicorn implements RequestHandler<APIGatewayProxyRequestEven
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
         final String rideId = randomId();
-        final String username = username(input);
+        final String username = Cognito.username(input).orElse(null);
         final Request request = request(input);
         context.getLogger().log("Finding unicorn for " + request.getPickupLocation().getLatitude() +
                 ", " + request.getPickupLocation().getLongitude());
@@ -117,13 +117,6 @@ public class RequestUnicorn implements RequestHandler<APIGatewayProxyRequestEven
         response.setEta("30 seconds");
         response.setRider(username);
         return response(response);
-
-    }
-
-    @SuppressWarnings("unchecked")
-    private String username(final APIGatewayProxyRequestEvent input) {
-        final Map<String, ?> claims = (Map<String, ?>) input.getRequestContext().getAuthorizer().get("claims");
-        return claims.get("cognito:username").toString();
     }
 
     private Request request(final APIGatewayProxyRequestEvent input) {

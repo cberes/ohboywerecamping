@@ -61,20 +61,13 @@ Resources:
                 - states.amazonaws.com
             Action:
               - sts:AssumeRole
-          - Effect: Allow
-            Principal:
-              AWS:
-                - !Sub 'arn:aws:iam::${AWS::AccountId}:user/cberes'
-            Action:
-              - sts:AssumeRole
       ManagedPolicyArns:
-        # Canned policies that allow our lambda functions to log to Cloudwatch and
-        # XRay and run in our VPC
+        # Canned policies that allow the Lambda functions to log to Cloudwatch and XRay
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
       Policies:
-        # The policy document specifies what our Lambda functions
+        # The policy document specifies what the Lambda functions
         # (or anything else that assumes the role) are allowed to do in AWS.
         - PolicyName: !Join ['_', [!Join ['_', !Split ['-', !Ref AppPrefix]], 'lambda_policies']]
           PolicyDocument:
@@ -106,28 +99,28 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Join ['_', ["CAMPGROUND", !Ref EnvironmentName]]
-      BillingMode: PAY_PER_REQUEST
+      BillingMode: 'PAY_PER_REQUEST'
       AttributeDefinitions:
         - AttributeName: "ID"
           AttributeType: "S"
       KeySchema:
-        AttributeName: "ID"
-        KeyType: "HASH"
+        - AttributeName: "ID"
+          KeyType: "HASH"
 
   AreaTable:
     Type: AWS::DynamoDB::Table
     DependsOn: "CampgroundTable"
     Properties:
       TableName: !Join ['_', ["AREA", !Ref EnvironmentName]]
-      BillingMode: PAY_PER_REQUEST
+      BillingMode: 'PAY_PER_REQUEST'
       AttributeDefinitions:
         - AttributeName: "ID"
           AttributeType: "S"
         - AttributeName: "CAMPGROUND_ID"
           AttributeType: "S"
       KeySchema:
-        AttributeName: "ID"
-        KeyType: "HASH"
+        - AttributeName: "ID"
+          KeyType: "HASH"
       GlobalSecondaryIndexes:
         - IndexName: "campground-id"
           KeySchema:
@@ -141,7 +134,7 @@ Resources:
     DependsOn: "AreaTable"
     Properties:
       TableName: !Join ['_', ["CAMPSITE", !Ref EnvironmentName]]
-      BillingMode: PAY_PER_REQUEST
+      BillingMode: 'PAY_PER_REQUEST'
       AttributeDefinitions:
         - AttributeName: "ID"
           AttributeType: "S"
@@ -150,8 +143,8 @@ Resources:
         - AttributeName: "AREA_ID"
           AttributeType: "S"
       KeySchema:
-        AttributeName: "ID"
-        KeyType: "HASH"
+        - AttributeName: "ID"
+          KeyType: "HASH"
       GlobalSecondaryIndexes:
         - IndexName: "campground-id"
           KeySchema:
@@ -171,7 +164,7 @@ Resources:
     DependsOn: "CampsiteTable"
     Properties:
       TableName: !Join ['_', ["RESERVATION", !Ref EnvironmentName]]
-      BillingMode: PAY_PER_REQUEST
+      BillingMode: 'PAY_PER_REQUEST'
       AttributeDefinitions:
         - AttributeName: "ID"
           AttributeType: "S"
@@ -179,88 +172,73 @@ Resources:
           AttributeType: "S"
         - AttributeName: "STARTING"
           AttributeType: "S"
-        - AttributeName: "ENDING"
-          AttributeType: "S"
       KeySchema:
-        AttributeName: "ID"
-        KeyType: "HASH"
+        - AttributeName: "ID"
+          KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "campsite-id-and-date"
+        - IndexName: "campsite-id-and-start-date"
           KeySchema:
             - AttributeName: "CAMPSITE_ID"
               KeyType: "HASH"
             - AttributeName: "STARTING"
               KeyType: "RANGE"
-            - AttributeName: "ENDING"
-              KeyType: "RANGE"
           Projection:
             ProjectionType: "KEYS_ONLY"
       TimeToLiveSpecification:
         AttributeName: "EXPIRE_ON"
-        Enabled: InTestEnv
+        Enabled: !If [InTestEnv, true, false]
 
   WebAppUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: WebApp
-      AccountRecoverySetting: 
-        - Priority: 1
-          Name: verified_email
+      UserPoolName: !Join ['-', [!Ref AppPrefix, 'user-pool']]
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Priority: 1
+            Name: 'verified_email'
       AutoVerifiedAttributes: 
-        - email
+        - 'email'
       EmailConfiguration:
-        EmailSendingAccount: COGNITO_DEFAULT
+        EmailSendingAccount: 'COGNITO_DEFAULT'
       EmailVerificationSubject: !Sub '${BusinessName} verification link'
-      EmailVerificationMessage: >-
-        Please click the link below to verify your email address. {##Verify Email##}
-      EnabledMfas: 
-        - SOFTWARE_TOKEN_MFA
-      MfaConfiguration: ON
+      EmailVerificationMessage: !Sub >-
+        Thank you for creating your ${BusinessName} account!
+
+        Please use this code to confirm your account: {####}
+      MfaConfiguration: 'OFF'
       Policies:
         PasswordPolicy:
           MinimumLength: 12
-          RequireLowercase: True
-          RequireNumbers: True
-          RequireSymbols: True
-          RequireUppercase: True
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
           TemporaryPasswordValidityDays: 7
       Schema: 
-        - Name: email
-          AttributeDataType: String
-          DeveloperOnlyAttribute: False
-          Mutable: True
-          Required: True
+        - Name: 'email'
+          AttributeDataType: 'String'
+          DeveloperOnlyAttribute: false
+          Mutable: true
+          Required: true
       UsernameConfiguration:
-        CaseSensitive: False
+        CaseSensitive: false
       UserPoolAddOns:
-        AdvancedSecurityMode: OFF
+        AdvancedSecurityMode: 'OFF'
 
   WebAppUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: String
+      ClientName: !Join ['-', [!Ref AppPrefix, 'user-pool-client']]
       UserPoolId: !Ref WebAppUserPool
-      GenerateSecret: False
+      GenerateSecret: false
       ExplicitAuthFlows:
-        - ALLOW_CUSTOM_AUTH
-        - ALLOW_USER_SRP_AUTH
-        - ALLOW_REFRESH_TOKEN_AUTH
-      PreventUserExistenceErrors: ENABLED
+        - 'ALLOW_CUSTOM_AUTH'
+        - 'ALLOW_USER_SRP_AUTH'
+        - 'ALLOW_REFRESH_TOKEN_AUTH'
+      PreventUserExistenceErrors: 'ENABLED'
       RefreshTokenValidity: 30
       SupportedIdentityProviders:
-        - COGNITO
-        - Facebook
-        - Google
-        - LoginWithAmazon
-      ReadAttributes:
-        - email
-        - email verified
-        - name
-        - nickname
-        - given name
-        - family name
-        - profile
-        - preferred username
+        - 'COGNITO'
 
   CompileClassPathLambdaLayer:
     Type: AWS::Lambda::LayerVersion
@@ -268,7 +246,7 @@ Resources:
       Description: Java dependencies for the Serverless web app lambda functions.
       LayerName: !Join ['-', ['web-app-deps', !Ref EnvironmentName]]
       CompatibleRuntimes:
-        - java8
+        - java11
       Content:
         S3Bucket: !Ref StagingBucketName
         S3Key: !Join ['/', ['web-app-dist', !Ref LambdaLayerBundleName]]
@@ -327,11 +305,12 @@ Resources:
         - !GetAtt WebAppUserPool.Arn
       AuthorizerCredentials: !GetAtt WebAppLambdaRole.Arn
       AuthorizerResultTtlInSeconds: 300
-      IdentitySource: Authorization
+      IdentitySource: method.request.header.Authorization
 
   TakeReservationAPIResource:
     Type: AWS::ApiGateway::Resource
     Properties:
+      ParentId: !GetAtt TakeReservationRestAPI.RootResourceId
       PathPart: reservation
       RestApiId: !Ref TakeReservationRestAPI
 
@@ -369,15 +348,16 @@ Resources:
     Type: AWS::ApiGateway::Method
     Properties:
       OperationName: Handle Reservation Event
-      HttpMethod: POST
-      AuthorizationType: CUSTOM
+      HttpMethod: 'POST'
+      AuthorizationType: 'COGNITO_USER_POOLS'
       AuthorizerId: !Ref TakeReservationAuthorizer
-      #ResourceId: !GetAtt TakeReservationRestAPI.RootResourceId
       ResourceId: !Ref TakeReservationAPIResource
       RestApiId: !Ref TakeReservationRestAPI
+      RequestParameters:
+        'method.request.header.Authorization': true
       Integration:
-        IntegrationHttpMethod: POST
-        Type: AWS_PROXY
+        IntegrationHttpMethod: 'POST'
+        Type: 'AWS_PROXY'
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
           - { Lambda: !GetAtt TakeReservationLambda.Arn }
