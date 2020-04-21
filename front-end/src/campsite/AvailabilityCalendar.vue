@@ -20,6 +20,9 @@ export default {
       availabilityCache: {}
     }
   },
+  created () {
+    this.loadAvailability(this.id, this.currentMonth)
+  },
   methods: {
     loadAvailability (campsiteId, firstOfMonth) {
       const key = firstOfMonth.format('Y-MM-DD')

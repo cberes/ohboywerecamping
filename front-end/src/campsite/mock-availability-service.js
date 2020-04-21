@@ -14,9 +14,14 @@ export default {
   },
 
   mockCampsite (id, start, end) {
+    const today = moment().startOf('day')
+    const tooSoon = moment().add(2, 'days').startOf('day')
+
     return {
       id: id,
-      availability: this.datesBetween(start, end).map(this.mockDate)
+      availability: this.datesBetween(start, end)
+        .filter(date => !date.isBefore(today))
+        .map(date => this.mockDate(date, tooSoon))
     }
   },
 
@@ -25,15 +30,15 @@ export default {
     let currentDate = start
     while (currentDate.isBefore(end)) {
       dates.push(currentDate)
-      currentDate = moment(currentDate).add(1, 'days')
+      currentDate = moment(currentDate).add(1, 'days').startOf('day')
     }
     return dates
   },
 
-  mockDate (date) {
+  mockDate (date, tooSoon) {
     return {
       date: date.format('YYYY-MM-DD'),
-      status: 'AVAILABLE'
+      status: !date.isBefore(tooSoon) ? 'AVAILABLE' : 'IN_PERSON_ONLY'
     }
   },
 

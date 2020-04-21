@@ -38,6 +38,10 @@ export default {
         done = done || firstDayOfWeek.isAfter(this.lastDay)
       }
       return daysByWeek
+    },
+    emptyWeeks () {
+      const weeksToAdd = 6 - this.weeks.length
+      return [...Array(weeksToAdd).keys()].map(index => [{ index }])
     }
   },
   methods: {
@@ -68,6 +72,13 @@ export default {
       <td :key="day.index" v-for="day in week.days">
         <span class="date">{{ formatDate(day.value) }}</span>
         <span class="info" :class="infoClass(day.value)" v-html="infoValue(day.value)"></span>
+      </td>
+    </tr>
+    <!-- Add extra weeks so that the calendar is the same size for every month -->
+    <tr :key="week.index" v-for="week in emptyWeeks">
+      <td colspan="7">
+        <span class="date" v-html="'&nbsp;'"></span>
+        <span class="info" v-html="'&nbsp;'"></span>
       </td>
     </tr>
   </table>
