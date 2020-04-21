@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-
+import authModule from '@/auth/auth-store'
 import campgroundModule from '@/campground/campground-store'
 
 Vue.use(Vuex)
@@ -13,6 +13,7 @@ export default new Vuex.Store({
   actions: {
   },
   modules: {
+    auth: authModule,
     campgrounds: campgroundModule
   }
 })

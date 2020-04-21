@@ -1,3 +1,14 @@
+<script>
+import { components } from 'aws-amplify-vue'
+
+export default {
+  name: 'app',
+  components: {
+    ...components
+  }
+}
+</script>
+
 <template>
   <div id="app">
     <router-view :key="$route.fullPath"/>
