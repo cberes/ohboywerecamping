@@ -56,7 +56,7 @@ export default {
       </tr>
     </table>
     <h3 id="calendar">Availability</h3>
-    <availability-calendar :id="campsite.id"></availability-calendar>
+    <availability-calendar :id="campsite.id" selectMode="MULTIPLE"></availability-calendar>
     <p>
       <router-link to="/cart">Reserve this campsite</router-link>
     </p>

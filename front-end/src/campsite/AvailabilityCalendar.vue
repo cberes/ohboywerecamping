@@ -10,6 +10,11 @@ export default {
     today: {
       type: Object,
       default: () => moment().add({ days: 1 }).month() > moment().month() ? moment().add({ days: 1 }) : moment()
+    },
+    selectMode: {
+      type: String,
+      required: false,
+      default: 'NONE'
     }
   },
   components: { Calendar },
@@ -87,7 +92,7 @@ export default {
 <template>
   <div>
     <el-button style="float:left" icon="el-icon-arrow-left" circle @click="previousMonth"></el-button>
-    <calendar style="float:left" :month="currentMonth.month()" :year="currentMonth.year()" :info="statusByDay"></calendar>
+    <calendar style="float:left" :month="currentMonth.month()" :year="currentMonth.year()" :info="statusByDay" :selectMode="selectMode"></calendar>
     <el-button style="float:left" icon="el-icon-arrow-right" circle @click="nextMonth"></el-button>
     <div style="clear:left"></div>
   </div>

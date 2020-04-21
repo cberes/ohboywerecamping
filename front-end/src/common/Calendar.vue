@@ -1,12 +1,36 @@
 <script>
 import moment from 'moment'
 
+const selectModes = ['NONE', 'SINGLE', 'MULTIPLE']
+
 export default {
   name: 'calendar',
-  props: ['month', 'year', 'info'],
+  props: {
+    month: {
+      type: Number,
+      required: true,
+      validator: i => i >= 1 && 1 <= 12
+    },
+    year: {
+      type: Number,
+      required: true,
+      validator: i => i >= 0
+    },
+    info: {
+      type: Object,
+      required: false,
+      default: () => ({})
+    },
+    selectMode: {
+      type: String,
+      required: false,
+      validator: s => selectModes.includes(s)
+    }
+  },
   data () {
     return {
-      days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      selected: {}
     }
   },
   computed: {
@@ -55,6 +79,26 @@ export default {
     infoValue (date) {
       const value = date && this.info[date.format('Y-MM-DD')]
       return value ? value.value : '&nbsp;'
+    },
+    isSelected (date) {
+      if (!date) {
+        return false
+      }
+
+      const key = date.format('Y-MM-DD')
+      return this.selected[key] === true
+    },
+    toggleSelected (date) {
+      if (!date || this.selectMode === 'NONE') {
+        return
+      }
+
+      if (this.selectMode === 'SINGLE') {
+        this.$set(this, 'selected', {})
+      }
+
+      const key = date.format('Y-MM-DD')
+      this.$set(this.selected, key, !this.selected[key])
     }
   }
 }
@@ -69,7 +113,7 @@ export default {
       <th :key="day" v-for="day in days">{{day.substring(0, 3)}}</th>
     </tr>
     <tr :key="week.index" v-for="week in weeks">
-      <td :key="day.index" v-for="day in week.days">
+      <td :key="day.index" v-for="day in week.days" @click="toggleSelected(day.value)" :class="{ selected: isSelected(day.value) }">
         <span class="date">{{ formatDate(day.value) }}</span>
         <span class="info" :class="infoClass(day.value)" v-html="infoValue(day.value)"></span>
       </td>
@@ -93,6 +137,9 @@ th, td {
 }
 td {
   position: relative;
+}
+td.selected {
+  background-color: lightblue;
 }
 .date {
   position: absolute;
