@@ -81,22 +81,19 @@ export default {
           return ''
       }
     },
-    selectedCount () {
-      return this.$refs.cal.selectedCount()
-    },
-    selectedDays () {
-      return this.$refs.cal.selectedDay()
-    },
-    selected (date) {
-      this.$emit('selected', date)
-    },
-    unselected (date) {
-      this.$emit('unselected', date)
+    selectionChanged (days) {
+      this.$emit('selectionChanged', days)
     }
   },
   computed: {
     statusByDay () {
       return (this.availability || []).reduce(this.mergeStatus, {})
+    },
+    selectedCount () {
+      return this.$refs.cal.selectedCount
+    },
+    selectedDays () {
+      return this.$refs.cal.selectedDays
     }
   }
 }
@@ -110,8 +107,7 @@ export default {
               :year="currentMonth.year()"
               :info="statusByDay"
               :selectMode="selectMode"
-              @selected="selected"
-              @unselected="unselected"
+              @selectionChanged="selectionChanged"
               ref="cal"></calendar>
     <el-button style="float:left" icon="el-icon-arrow-right" circle @click="nextMonth"></el-button>
     <div style="clear:left"></div>

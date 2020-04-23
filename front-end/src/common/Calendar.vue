@@ -63,6 +63,12 @@ export default {
     emptyWeeks () {
       const weeksToAdd = 6 - this.weeks.length
       return [...Array(weeksToAdd).keys()].map(index => [{ index }])
+    },
+    selectedCount () {
+      return this.selected.length
+    },
+    selectedDays () {
+      return this.selected.slice()
     }
   },
   methods: {
@@ -112,7 +118,7 @@ export default {
     },
     _select (key) {
       this.selected.push(key)
-      this.$emit('selected', key)
+      this.$emit('selectionChanged', this.selected)
     },
     _unselectCurrentForSingleMode () {
       if (this.selectMode === 'SINGLE' && this.selected.length > 0) {
@@ -120,14 +126,8 @@ export default {
       }
     },
     _unselect (index) {
-      const [key] = this.selected.splice(index, 1)
-      this.$emit('unselected', key)
-    },
-    selectedCount () {
-      return this.selected.length
-    },
-    selectedDays () {
-      return this.selected.slice()
+      this.selected.splice(index, 1)
+      this.$emit('selectionChanged', this.selected)
     }
   }
 }

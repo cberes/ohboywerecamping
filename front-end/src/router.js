@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import authRoutes from '@/auth/auth-routes'
 import campgroundRoutes from '@/campground/campground-routes'
 import campsiteRoutes from '@/campsite/campsite-routes'
+import reservationRoutes from '@/reservation/reservation-routes'
 
 Vue.use(VueRouter)
 
@@ -13,6 +14,7 @@ const router = new VueRouter({
     ...authRoutes,
     ...campgroundRoutes,
     ...campsiteRoutes,
+    ...reservationRoutes,
     {
       path: '/404',
       name: '404',

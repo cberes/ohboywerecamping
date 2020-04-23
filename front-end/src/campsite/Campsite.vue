@@ -11,7 +11,8 @@ export default {
       campsite: null,
       error: null,
       now: moment(),
-      today: moment().add(1, 'days').format('YYYY-MM-DD')
+      today: moment().add(1, 'days').format('YYYY-MM-DD'),
+      daySelected: false
     }
   },
   mounted () {
@@ -22,6 +23,18 @@ export default {
       campsiteService.getCampsite(id)
         .then(result => (this.campsite = result))
         .catch(reason => (this.error = reason.message))
+    },
+    reserve () {
+      this.$store.dispatch('reservation/setPending', {
+        campsiteId: this.campsite.id,
+        days: this.$refs.cal.selectedDays
+      })
+      this.$router.push({ name: 'pending-reservation' })
+    },
+    reservationChanged (days) {
+      // for some reason I need to listen for events rather than
+      // using a computed field that itself uses one of the calendar's computed fields
+      this.daySelected = days.length > 0
     }
   }
 }
@@ -56,10 +69,11 @@ export default {
       </tr>
     </table>
     <h3 id="calendar">Availability</h3>
-    <availability-calendar :id="campsite.id" selectMode="MULTIPLE"></availability-calendar>
-    <p>
-      <router-link to="/cart">Reserve this campsite</router-link>
-    </p>
+    <availability-calendar :id="campsite.id"
+                           selectMode="MULTIPLE"
+                           @selectionChanged="reservationChanged"
+                           ref="cal"></availability-calendar>
+    <el-button type="primary" :disabled="!daySelected" @click="reserve">Reserve this campsite</el-button>
   </div>
   <div class="error" v-else-if="error">{{ error }}</div>
   <div class="loading" v-else>Loading...</div>
