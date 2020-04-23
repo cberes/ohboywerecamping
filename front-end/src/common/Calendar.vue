@@ -29,7 +29,7 @@ export default {
   },
   data () {
     return {
-      days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
       selected: []
     }
   },
@@ -45,13 +45,10 @@ export default {
       let firstDayOfWeek = this.firstDay
       let done = false
       while (!done) {
-        const days = []
-        let index = 0
-        while (index < firstDayOfWeek.day()) {
-          days.push({ index: index++, value: null })
-        }
-        const emptyDays = index
-        while (index < 7) {
+        const emptyDays = firstDayOfWeek.day()
+        const days = this._createDummyDaysPriorToMonth(emptyDays)
+        let index = days.length
+        while (index < this.dayNames.length) {
           const day = moment(firstDayOfWeek).add({ days: index - emptyDays })
           const value = day.month() === firstDayOfWeek.month() ? day : null
           days.push({ index: index++, value })
@@ -69,6 +66,14 @@ export default {
     }
   },
   methods: {
+    _createDummyDaysPriorToMonth (dayCount) {
+      const days = []
+      let index = 0
+      while (index < dayCount) {
+        days.push({ index: index++, value: null })
+      }
+      return days
+    },
     formatDate (date) {
       return date ? date.date() : ''
     },
@@ -89,28 +94,34 @@ export default {
       return this.selected.includes(key)
     },
     toggleSelected (date) {
-      if (!date || this.selectMode === 'NONE') {
+      const key = date && date.format('Y-MM-DD')
+      if (!this._isSelectionAllowed(key)) {
         return
-      }
-
-      const key = date.format('Y-MM-DD')
-      if (!this.info[key] || !this.info[key].selectable) {
-        return
-      }
-
-      if (this.selectMode === 'SINGLE' && this.selected.length > 0) {
-        this.$emit('unselected', this.selected[0])
-        this.selected.splice(0, 1)
       }
 
       const index = this.selected.indexOf(key)
       if (index < 0) {
-        this.selected.push(key)
-        this.$emit('selected', key)
+        this._unselectCurrentForSingleMode()
+        this._select(key)
       } else {
-        this.selected.splice(index, 1)
-        this.$emit('unselected', key)
+        this._unselect(index)
       }
+    },
+    _isSelectionAllowed (key) {
+      return this.selectMode !== 'NONE' && this.info[key] && this.info[key].selectable
+    },
+    _select (key) {
+      this.selected.push(key)
+      this.$emit('selected', key)
+    },
+    _unselectCurrentForSingleMode () {
+      if (this.selectMode === 'SINGLE' && this.selected.length > 0) {
+        this._unselect(0)
+      }
+    },
+    _unselect (index) {
+      const [key] = this.selected.splice(index, 1)
+      this.$emit('unselected', key)
     },
     selectedCount () {
       return this.selected.length
@@ -128,7 +139,7 @@ export default {
       <th colspan="7">{{ firstDay.format('MMMM Y') }}</th>
     </tr>
     <tr>
-      <th :key="day" v-for="day in days">{{day.substring(0, 3)}}</th>
+      <th :key="name" v-for="name in dayNames">{{name.substring(0, 3)}}</th>
     </tr>
     <tr :key="week.index" v-for="week in weeks">
       <td :key="day.index" v-for="day in week.days" @click="toggleSelected(day.value, )" :class="{ selected: isSelected(day.value) }">
