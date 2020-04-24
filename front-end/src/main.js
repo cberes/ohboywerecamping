@@ -15,6 +15,7 @@ import awsConfig from './config/aws'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+import navigationGuards from './common/navigation-guards'
 
 require('normalize-css')
 
@@ -23,6 +24,8 @@ Vue.use(ElementUI, { locale })
 
 Amplify.configure(awsConfig)
 Vue.use(AmplifyPlugin, AmplifyModules)
+
+navigationGuards(router)
 
 new Vue({
   router,

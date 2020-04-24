@@ -1,6 +1,8 @@
 <script>
 import { mapActions, mapState } from 'vuex'
+import authService from '../auth/auth-service'
 import campsiteService from '../campsite/mock-campsite-service'
+import reservationService from '../reservation/reservation-service'
 
 export default {
   name: 'pending-reservation',
@@ -38,9 +40,15 @@ export default {
         .then(result => (this.campsite = result))
         .catch(reason => (this.error = reason.message))
     },
-    confirm () {
-      // TODO add the reservation to the database
-      this.clearPending()
+    async confirm () {
+      const session = await authService.currentSession()
+      const authToken = session.getIdToken().getJwtToken()
+      reservationService.createReservation(this.campsite.campsiteId, this.days, authToken)
+        .then(result => {
+          this.clearPending()
+          // TODO send the user to the reservation (review) page
+          console.log(result)
+        }).catch(err => console.log(err))
     }
   }
 }

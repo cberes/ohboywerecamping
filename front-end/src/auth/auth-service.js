@@ -1,5 +1,8 @@
-import httpService from '@/common/http-service'
+import { Auth } from 'aws-amplify'
 
 export default {
-    
+  currentSession () {
+    return Auth.currentSession()
+      .catch(err => console.log(err))
+  }
 }
