@@ -45,7 +45,7 @@ task lambdaFunctionBundle(type: Zip) {
 
 task lambdaLayerBundle(type: Zip) {
     archiveFileName = "lambda-layer-${bundleSuffix()}.zip"
-    into('lib') {
+    into('java/lib') {
         from configurations.runtimeClasspath
     }
 }

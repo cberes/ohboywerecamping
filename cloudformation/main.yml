@@ -43,6 +43,17 @@ Conditions:
       
 Resources:
 
+  RuntimeClassPathLambdaLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      Description: Java dependencies for the Serverless web app lambda functions.
+      LayerName: !Join ['-', ['web-app-deps', !Ref EnvironmentName]]
+      CompatibleRuntimes:
+        - java11
+      Content:
+        S3Bucket: !Ref StagingBucketName
+        S3Key: !Join ['/', ['web-app-dist', !Ref LambdaLayerBundleName]]
+
   WebAppLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -88,12 +99,19 @@ Resources:
                   - !GetAtt CampgroundTable.Arn
                   - !GetAtt AreaTable.Arn
                   - !GetAtt CampsiteTable.Arn
+                  - !GetAtt CustomerTable.Arn
+                  - !GetAtt OrderTable.Arn
                   - !GetAtt ReservationTable.Arn
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
                 Resource:
                   - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AppPrefix}-*-${EnvironmentName}'
+              - Effect: Allow
+                Action:
+                  - lambda:GetLayerVersion
+                Resource:
+                  - !Ref RuntimeClassPathLambdaLayer
 
   CampgroundTable:
     Type: AWS::DynamoDB::Table
@@ -122,7 +140,7 @@ Resources:
         - AttributeName: "ID"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "campground-id"
+        - IndexName: "areas-by-campground-id"
           KeySchema:
             - AttributeName: "CAMPGROUND_ID"
               KeyType: "HASH"
@@ -146,22 +164,70 @@ Resources:
         - AttributeName: "ID"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "campground-id"
+        - IndexName: "campsites-by-campground-id"
           KeySchema:
             - AttributeName: "CAMPGROUND_ID"
               KeyType: "HASH"
           Projection:
             ProjectionType: "KEYS_ONLY"
-        - IndexName: "area-id"
+        - IndexName: "campsites-by-area-id"
           KeySchema:
             - AttributeName: "AREA_ID"
               KeyType: "HASH"
           Projection:
             ProjectionType: "KEYS_ONLY"
 
+  CustomerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Join ['_', ["CUSTOMER", !Ref EnvironmentName]]
+      BillingMode: 'PAY_PER_REQUEST'
+      AttributeDefinitions:
+        - AttributeName: "ID"
+          AttributeType: "S"
+        - AttributeName: "EMAIL"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "ID"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "customer-email"
+          KeySchema:
+            - AttributeName: "EMAIL"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+
+  OrderTable:
+    Type: AWS::DynamoDB::Table
+    DependsOn: "CustomerTable"
+    Properties:
+      TableName: !Join ['_', ["ORDER", !Ref EnvironmentName]]
+      BillingMode: 'PAY_PER_REQUEST'
+      AttributeDefinitions:
+        - AttributeName: "ID"
+          AttributeType: "S"
+        - AttributeName: "CUSTOMER_ID"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "ID"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "order-customer-id"
+          KeySchema:
+            - AttributeName: "CUSTOMER_ID"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+      TimeToLiveSpecification:
+        AttributeName: "EXPIRE_ON"
+        Enabled: !If [InTestEnv, true, false]
+
   ReservationTable:
     Type: AWS::DynamoDB::Table
-    DependsOn: "CampsiteTable"
+    DependsOn:
+      - "CampsiteTable"
+      - "OrderTable"
     Properties:
       TableName: !Join ['_', ["RESERVATION", !Ref EnvironmentName]]
       BillingMode: 'PAY_PER_REQUEST'
@@ -170,18 +236,26 @@ Resources:
           AttributeType: "S"
         - AttributeName: "CAMPSITE_ID"
           AttributeType: "S"
-        - AttributeName: "STARTING"
+        - AttributeName: "RESERVATION_DATE"
+          AttributeType: "S"
+        - AttributeName: "ORDER_ID"
           AttributeType: "S"
       KeySchema:
         - AttributeName: "ID"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "campsite-id-and-start-date"
+        - IndexName: "reservation-by-campsite-id-and-date"
           KeySchema:
             - AttributeName: "CAMPSITE_ID"
               KeyType: "HASH"
-            - AttributeName: "STARTING"
+            - AttributeName: "RESERVATION_DATE"
               KeyType: "RANGE"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+        - IndexName: "reservation-by-order-id"
+          KeySchema:
+            - AttributeName: "ORDER_ID"
+              KeyType: "HASH"
           Projection:
             ProjectionType: "KEYS_ONLY"
       TimeToLiveSpecification:
@@ -240,45 +314,88 @@ Resources:
       SupportedIdentityProviders:
         - 'COGNITO'
 
-  CompileClassPathLambdaLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      Description: Java dependencies for the Serverless web app lambda functions.
-      LayerName: !Join ['-', ['web-app-deps', !Ref EnvironmentName]]
-      CompatibleRuntimes:
-        - java11
-      Content:
-        S3Bucket: !Ref StagingBucketName
-        S3Key: !Join ['/', ['web-app-dist', !Ref LambdaLayerBundleName]]
-
-  # Lambda Function that creates reservations for campsites
-  TakeReservationLambda:
+  # Lambda Function that reads availability for a campsite
+  ReadAvailabilityLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Join ['-', [!Ref AppPrefix, 'take-reservation', !Ref EnvironmentName]]
-      Description: Receives incoming HTTP POSTs from front end
+      FunctionName: !Join ['-', [!Ref AppPrefix, 'read-availability', !Ref EnvironmentName]]
+      Description: Reads a campsite's availability after receiving HTTP GET from front end
       Code:
         S3Bucket: !Ref StagingBucketName
         S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
-      Handler: com.ohboywerecamping.webapp.reservation.TakeReservationLambda::handleRequest
+      Handler: com.ohboywerecamping.webapp.availability.ReadAvailabilityLambda::handleRequest
       Layers:
-        - !Ref CompileClassPathLambdaLayer
-      MemorySize: 1024 # megabytes
+        - !Ref RuntimeClassPathLambdaLayer
+      MemorySize: 256 # megabytes
       Role: !GetAtt WebAppLambdaRole.Arn
       Runtime: java11
       Timeout: 120
       TracingConfig:
         Mode: Active
 
-  TakeReservationLambdaAPIGatewayPermission:
+  # Lambda Function that reads a reservation for a campsite
+  ReadReservationLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Join ['-', [!Ref AppPrefix, 'read-reservation', !Ref EnvironmentName]]
+      Description: Reads a reservation after receiving HTTP GET from front end
+      Code:
+        S3Bucket: !Ref StagingBucketName
+        S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
+      Handler: com.ohboywerecamping.webapp.reservation.ReadReservationLambda::handleRequest
+      Layers:
+        - !Ref RuntimeClassPathLambdaLayer
+      MemorySize: 256 # megabytes
+      Role: !GetAtt WebAppLambdaRole.Arn
+      Runtime: java11
+      Timeout: 120
+      TracingConfig:
+        Mode: Active
+
+  # Lambda Function that creates reservations for campsites
+  CreateReservationLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Join ['-', [!Ref AppPrefix, 'create-reservation', !Ref EnvironmentName]]
+      Description: Creates reservation after receiving HTTP POST from front end
+      Code:
+        S3Bucket: !Ref StagingBucketName
+        S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
+      Handler: com.ohboywerecamping.webapp.reservation.CreateReservationLambda::handleRequest
+      Layers:
+        - !Ref RuntimeClassPathLambdaLayer
+      MemorySize: 256 # megabytes
+      Role: !GetAtt WebAppLambdaRole.Arn
+      Runtime: java11
+      Timeout: 120
+      TracingConfig:
+        Mode: Active
+
+  ReadAvailabilityLambdaAPIGatewayPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt TakeReservationLambda.Arn
+      FunctionName: !GetAtt ReadAvailabilityLambda.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TakeReservationRestAPI}/*/*/*'
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CampingRestAPI}/*/*/*'
 
-  TakeReservationRestAPI:
+  ReadReservationLambdaAPIGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ReadReservationLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CampingRestAPI}/*/*/*'
+
+  CreateReservationLambdaAPIGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt CreateReservationLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CampingRestAPI}/*/*/*'
+
+  CampingRestAPI:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Name: !Join ['-', [!Ref AppPrefix, 'api', !Ref EnvironmentName]]
@@ -295,11 +412,11 @@ Resources:
       #    so there isn't a compelling reason to compress them.
       MinimumCompressionSize: 860
 
-  TakeReservationAuthorizer:
+  CampingRestAPIAuthorizer:
     Type: AWS::ApiGateway::Authorizer
     Properties: 
-      Name: TakeReservation
-      RestApiId: !Ref TakeReservationRestAPI
+      Name: CampingRestAPIAuthorizer
+      RestApiId: !Ref CampingRestAPI
       Type: COGNITO_USER_POOLS
       ProviderARNs: 
         - !GetAtt WebAppUserPool.Arn
@@ -307,21 +424,77 @@ Resources:
       AuthorizerResultTtlInSeconds: 300
       IdentitySource: method.request.header.Authorization
 
-  TakeReservationAPIResource:
+  CampingRestAPIResource:
     Type: AWS::ApiGateway::Resource
     Properties:
-      ParentId: !GetAtt TakeReservationRestAPI.RootResourceId
-      PathPart: reservation
-      RestApiId: !Ref TakeReservationRestAPI
+      ParentId: !GetAtt CampingRestAPI.RootResourceId
+      PathPart: api
+      RestApiId: !Ref CampingRestAPI
 
-  TakeReservationCORS:
+  AvailabilityAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref CampingRestAPIResource
+      PathPart: availability
+      RestApiId: !Ref CampingRestAPI
+
+  AvailabilityCampsiteAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref AvailabilityAPIResource
+      PathPart: campsites
+      RestApiId: !Ref CampingRestAPI
+
+  AvailabilityCampsiteIdAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref AvailabilityCampsiteAPIResource
+      PathPart: '{campsiteId}'
+      RestApiId: !Ref CampingRestAPI
+
+  CampsiteAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref CampingRestAPIResource
+      PathPart: campsites
+      RestApiId: !Ref CampingRestAPI
+
+  CampsiteIdAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref CampsiteAPIResource
+      PathPart: '{campsiteId}'
+      RestApiId: !Ref CampingRestAPI
+
+  CampsiteReservationAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref CampsiteIdAPIResource
+      PathPart: reservations
+      RestApiId: !Ref CampingRestAPI
+
+  OrderAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref CampingRestAPIResource
+      PathPart: order
+      RestApiId: !Ref CampingRestAPI
+
+  OrderIdAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref OrderAPIResource
+      PathPart: '{orderId}'
+      RestApiId: !Ref CampingRestAPI
+
+  ReadAvailabilityCORS:
     Type: AWS::ApiGateway::Method
     Properties:
-      OperationName: CORS for Handle Reservation Event
+      OperationName: CORS for Read Availability Event
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ResourceId: !Ref TakeReservationAPIResource
-      RestApiId: !Ref TakeReservationRestAPI
+      ResourceId: !Ref AvailabilityCampsiteIdAPIResource
+      RestApiId: !Ref CampingRestAPI
       Integration:
         IntegrationResponses:
           - StatusCode: 200
@@ -344,36 +517,135 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: false
             method.response.header.Access-Control-Allow-Origin: false
 
-  TakeReservationAPIMethod:
+  ReadReservationCORS:
     Type: AWS::ApiGateway::Method
     Properties:
-      OperationName: Handle Reservation Event
-      HttpMethod: 'POST'
-      AuthorizationType: 'COGNITO_USER_POOLS'
-      AuthorizerId: !Ref TakeReservationAuthorizer
-      ResourceId: !Ref TakeReservationAPIResource
-      RestApiId: !Ref TakeReservationRestAPI
+      OperationName: CORS for Read Reservation Event
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ResourceId: !Ref OrderIdAPIResource
+      RestApiId: !Ref CampingRestAPI
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
+  CreateReservationCORS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: CORS for Create Reservation Event
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ResourceId: !Ref CampsiteReservationAPIResource
+      RestApiId: !Ref CampingRestAPI
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
+  ReadAvailabilityAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Read Availability Event
+      HttpMethod: 'GET'
+      AuthorizationType: 'NONE'
+      ResourceId: !Ref AvailabilityCampsiteIdAPIResource
+      RestApiId: !Ref CampingRestAPI
       RequestParameters:
-        'method.request.header.Authorization': true
+        'method.request.path.campsiteid': true
       Integration:
         IntegrationHttpMethod: 'POST'
         Type: 'AWS_PROXY'
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
-          - { Lambda: !GetAtt TakeReservationLambda.Arn }
+          - { Lambda: !GetAtt ReadAvailabilityLambda.Arn }
 
-  TakeReservationDeployment:
+  ReadReservationAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Read Reservation Event
+      HttpMethod: 'GET'
+      AuthorizationType: 'COGNITO_USER_POOLS'
+      AuthorizerId: !Ref CampingRestAPIAuthorizer
+      ResourceId: !Ref OrderIdAPIResource
+      RestApiId: !Ref CampingRestAPI
+      RequestParameters:
+        'method.request.header.Authorization': true
+        'method.request.path.orderId': true
+      Integration:
+        IntegrationHttpMethod: 'POST'
+        Type: 'AWS_PROXY'
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
+          - { Lambda: !GetAtt ReadReservationLambda.Arn }
+
+  CreateReservationAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Create Reservation Event
+      HttpMethod: 'POST'
+      AuthorizationType: 'COGNITO_USER_POOLS'
+      AuthorizerId: !Ref CampingRestAPIAuthorizer
+      ResourceId: !Ref CampsiteReservationAPIResource
+      RestApiId: !Ref CampingRestAPI
+      RequestParameters:
+        'method.request.header.Authorization': true
+        'method.request.path.campsiteid': true
+      Integration:
+        IntegrationHttpMethod: 'POST'
+        Type: 'AWS_PROXY'
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
+          - { Lambda: !GetAtt CreateReservationLambda.Arn }
+
+  CampingRestAPIDeployment:
     Type: AWS::ApiGateway::Deployment
     Properties:
-      RestApiId: !Ref TakeReservationRestAPI
+      RestApiId: !Ref CampingRestAPI
     DependsOn:
-      - TakeReservationAPIMethod
+      - ReadAvailabilityAPIMethod
+      - ReadReservationAPIMethod
+      - CreateReservationAPIMethod
 
-  TakeReservationStageV1:
+  CampingRestAPIStageV1:
     Type: AWS::ApiGateway::Stage
     Properties:
-      DeploymentId: !Ref TakeReservationDeployment
-      RestApiId: !Ref TakeReservationRestAPI
+      DeploymentId: !Ref CampingRestAPIDeployment
+      RestApiId: !Ref CampingRestAPI
       StageName: v1
       TracingEnabled: true
 
@@ -389,4 +661,4 @@ Outputs:
 
   ApiInvokeUrl:
     Description: Information about the value
-    Value: !Sub 'https://${TakeReservationRestAPI}.execute-api.${AWS::Region}.amazonaws.com/${TakeReservationStageV1}'
+    Value: !Sub 'https://${CampingRestAPI}.execute-api.${AWS::Region}.amazonaws.com/${CampingRestAPIStageV1}'

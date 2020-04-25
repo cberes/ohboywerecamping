@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+# create our variables
+env="$1"
+stack_name="ohboywerecamping-$env"
+s3_dest=s3://ohboywerecamping/web-app-dist/
+lambda_layer=$(ls -t serverless-web-app/build/distributions/lambda-layer-boneyard-*.zip | head -1)
+source_bundle=$(ls -t serverless-web-app/build/distributions/source-bundle-boneyard-*.zip | head -1)
+
+# upload files
+aws s3 cp "$lambda_layer" $s3_dest
+aws s3 cp "$source_bundle" $s3_dest
+aws s3 cp cloudformation/main.yml $s3_dest
+
+# decide: create or update
+aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE \
+  | jq -r '.StackSummaries[].StackName' | grep -q "^$stack_name$"
+stack_exists=$?
+if [ $stack_exists -eq 0 ]; then
+  stack_op=update-stack
+else
+  stack_op=create-stack
+fi
+
+# deploy the stack
+aws cloudformation $stack_op \
+--stack-name $stack_name \
+--template-url 'https://ohboywerecamping.s3.amazonaws.com/web-app-dist/main.yml' \
+--capabilities CAPABILITY_NAMED_IAM \
+--parameters '[
+  {
+    "ParameterKey": "AppPrefix",
+    "ParameterValue": "camping",
+    "UsePreviousValue": false
+  },
+  {
+    "ParameterKey": "BusinessName",
+    "ParameterValue": "OhBoyWereCamping.com",
+    "UsePreviousValue": false
+  },
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "'$env'",
+    "UsePreviousValue": false
+  },
+  {
+    "ParameterKey": "LambdaBundleName",
+    "ParameterValue": "'$(basename $source_bundle)'",
+    "UsePreviousValue": false
+  },
+  {
+    "ParameterKey": "LambdaLayerBundleName",
+    "ParameterValue": "'$(basename $lambda_layer)'",
+    "UsePreviousValue": false
+  },
+  {
+    "ParameterKey": "StagingBucketName",
+    "ParameterValue": "ohboywerecamping",
+    "UsePreviousValue": false
+  }
+]'

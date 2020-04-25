@@ -8,7 +8,7 @@ import com.ohboywerecamping.webapp.Cognito;
 
 import static java.util.Collections.singletonMap;
 
-public class TakeReservationLambda implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class CreateReservationLambda implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
         context.getLogger().log("Received event in " + getClass().getSimpleName());
