@@ -10,28 +10,28 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
-public class InMemoryCampsiteRepository extends InMemoryRepository<Campsite, Long> implements CampsiteRepository {
+public class InMemoryCampsiteRepository extends InMemoryRepository<Campsite, String> implements CampsiteRepository {
     private InMemoryCampsiteRepository() {
-        super(i -> (long) i, Campsite::setId, emptyList());
+        super(Object::toString, Campsite::setId, emptyList());
     }
 
     public InMemoryCampsiteRepository(final List<Area> areas) {
-        super(i -> (long) i, Campsite::setId, range(0, areas.size()).boxed()
+        super(Object::toString, Campsite::setId, range(0, areas.size()).boxed()
                 .flatMap(i -> Stream.of(campsite1(areas.get(i), i), campsite2(areas.get(i), i)))
                 .collect(toList()));
     }
 
     @Override
-    public List<Campsite> findByCampgroundId(final long id) {
+    public List<Campsite> findByCampgroundId(final String id) {
         return findAll().stream()
-                .filter(it -> it.getCampground().getId() == id)
+                .filter(it -> it.getCampground().getId().equals(id))
                 .collect(toList());
     }
 
     @Override
-    public List<Campsite> findByAreaId(final long id) {
+    public List<Campsite> findByAreaId(final String id) {
         return findAll().stream()
-                .filter(it -> it.getArea().getId() == id)
+                .filter(it -> it.getArea().getId().equals(id))
                 .collect(toList());
     }
 

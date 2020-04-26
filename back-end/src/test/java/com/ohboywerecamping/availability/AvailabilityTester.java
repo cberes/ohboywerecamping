@@ -25,11 +25,11 @@ final class AvailabilityTester {
         throw new UnsupportedOperationException("cannot instantiate " + getClass());
     }
 
-    static void assertEmpty(final CampsiteAvailability campsite, final long id) {
+    static void assertEmpty(final CampsiteAvailability campsite, final String id) {
         test(campsite, id, "");
     }
 
-    static void test(final CampsiteAvailability campsite, final long id, final String codes) {
+    static void test(final CampsiteAvailability campsite, final String id, final String codes) {
         assertThat(campsite.getId(), is(id));
         assertStatus(campsite, codes);
         assertDates(campsite);

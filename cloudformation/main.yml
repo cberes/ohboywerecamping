@@ -334,15 +334,15 @@ Resources:
         Mode: Active
 
   # Lambda Function that reads a reservation for a campsite
-  ReadReservationLambda:
+  ReadOrderLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Join ['-', [!Ref AppPrefix, 'read-reservation', !Ref EnvironmentName]]
+      FunctionName: !Join ['-', [!Ref AppPrefix, 'read-order', !Ref EnvironmentName]]
       Description: Reads a reservation after receiving HTTP GET from front end
       Code:
         S3Bucket: !Ref StagingBucketName
         S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
-      Handler: com.ohboywerecamping.webapp.reservation.ReadReservationLambda::handleRequest
+      Handler: com.ohboywerecamping.webapp.order.ReadOrderLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
       MemorySize: 256 # megabytes
@@ -353,15 +353,15 @@ Resources:
         Mode: Active
 
   # Lambda Function that creates reservations for campsites
-  CreateReservationLambda:
+  CreateOrderLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Join ['-', [!Ref AppPrefix, 'create-reservation', !Ref EnvironmentName]]
+      FunctionName: !Join ['-', [!Ref AppPrefix, 'create-order', !Ref EnvironmentName]]
       Description: Creates reservation after receiving HTTP POST from front end
       Code:
         S3Bucket: !Ref StagingBucketName
         S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
-      Handler: com.ohboywerecamping.webapp.reservation.CreateReservationLambda::handleRequest
+      Handler: com.ohboywerecamping.webapp.order.CreateOrderLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
       MemorySize: 256 # megabytes
@@ -379,19 +379,19 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CampingRestAPI}/*/*/*'
 
-  ReadReservationLambdaAPIGatewayPermission:
+  ReadOrderLambdaAPIGatewayPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt ReadReservationLambda.Arn
+      FunctionName: !GetAtt ReadOrderLambda.Arn
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CampingRestAPI}/*/*/*'
 
-  CreateReservationLambdaAPIGatewayPermission:
+  CreateOrderLambdaAPIGatewayPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt CreateReservationLambda.Arn
+      FunctionName: !GetAtt CreateOrderLambda.Arn
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CampingRestAPI}/*/*/*'
 
@@ -517,7 +517,7 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: false
             method.response.header.Access-Control-Allow-Origin: false
 
-  ReadReservationCORS:
+  ReadOrderCORS:
     Type: AWS::ApiGateway::Method
     Properties:
       OperationName: CORS for Read Reservation Event
@@ -547,7 +547,7 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: false
             method.response.header.Access-Control-Allow-Origin: false
 
-  CreateReservationCORS:
+  CreateOrderCORS:
     Type: AWS::ApiGateway::Method
     Properties:
       OperationName: CORS for Create Reservation Event
@@ -594,7 +594,7 @@ Resources:
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
           - { Lambda: !GetAtt ReadAvailabilityLambda.Arn }
 
-  ReadReservationAPIMethod:
+  ReadOrderAPIMethod:
     Type: AWS::ApiGateway::Method
     Properties:
       OperationName: Read Reservation Event
@@ -611,9 +611,9 @@ Resources:
         Type: 'AWS_PROXY'
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
-          - { Lambda: !GetAtt ReadReservationLambda.Arn }
+          - { Lambda: !GetAtt ReadOrderLambda.Arn }
 
-  CreateReservationAPIMethod:
+  CreateOrderAPIMethod:
     Type: AWS::ApiGateway::Method
     Properties:
       OperationName: Create Reservation Event
@@ -630,7 +630,7 @@ Resources:
         Type: 'AWS_PROXY'
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
-          - { Lambda: !GetAtt CreateReservationLambda.Arn }
+          - { Lambda: !GetAtt CreateOrderLambda.Arn }
 
   CampingRestAPIDeployment:
     Type: AWS::ApiGateway::Deployment
@@ -638,8 +638,8 @@ Resources:
       RestApiId: !Ref CampingRestAPI
     DependsOn:
       - ReadAvailabilityAPIMethod
-      - ReadReservationAPIMethod
-      - CreateReservationAPIMethod
+      - ReadOrderAPIMethod
+      - CreateOrderAPIMethod
 
   CampingRestAPIStageV1:
     Type: AWS::ApiGateway::Stage

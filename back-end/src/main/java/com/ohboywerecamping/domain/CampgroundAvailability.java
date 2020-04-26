@@ -3,14 +3,14 @@ package com.ohboywerecamping.domain;
 import java.util.List;
 
 public class CampgroundAvailability {
-    private long campgroundId;
+    private String campgroundId;
     private List<CampsiteAvailability> campsites;
 
-    public long getCampgroundId() {
+    public String getCampgroundId() {
         return campgroundId;
     }
 
-    public void setCampgroundId(final long campgroundId) {
+    public void setCampgroundId(final String campgroundId) {
         this.campgroundId = campgroundId;
     }
 
@@ -33,7 +33,7 @@ public class CampgroundAvailability {
             this.obj = new CampgroundAvailability();
         }
 
-        public Builder withCampgroundId(final long campgroundId) {
+        public Builder withCampgroundId(final String campgroundId) {
             obj.campgroundId = campgroundId;
             return this;
         }

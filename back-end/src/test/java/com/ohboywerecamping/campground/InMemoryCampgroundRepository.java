@@ -7,7 +7,8 @@ import com.ohboywerecamping.test.InMemoryRepository;
 
 import static java.util.Collections.emptyList;
 
-public class InMemoryCampgroundRepository extends InMemoryRepository<Campground, Long> implements CampgroundRepository {
+public class InMemoryCampgroundRepository
+        extends InMemoryRepository<Campground, String> implements CampgroundRepository {
     public InMemoryCampgroundRepository() {
         this(List.of(
                 buildCampground("Campground X",
@@ -22,7 +23,7 @@ public class InMemoryCampgroundRepository extends InMemoryRepository<Campground,
     }
 
     private InMemoryCampgroundRepository(final List<Campground> campgrounds) {
-        super(i -> (long) i, Campground::setId, campgrounds);
+        super(Object::toString, Campground::setId, campgrounds);
     }
 
     private static Campground buildCampground(final String name, final String description) {

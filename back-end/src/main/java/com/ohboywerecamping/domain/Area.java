@@ -3,7 +3,7 @@ package com.ohboywerecamping.domain;
 import java.util.Set;
 
 public class Area {
-    private long id;
+    private String id;
 
     private Campground campground;
 
@@ -15,11 +15,11 @@ public class Area {
 
     private Set<Campsite> campsites;
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(final long id) {
+    public void setId(final String id) {
         this.id = id;
     }
 

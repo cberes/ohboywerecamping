@@ -16,7 +16,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import software.amazon.awssdk.regions.Region;
+import com.ohboywerecamping.webapp.util.AwsUtils;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
@@ -96,8 +96,7 @@ public class RequestUnicorn implements RequestHandler<APIGatewayProxyRequestEven
             new Unicorn("Rocinante", "Yellow", "Female"));
 
 
-    private final Region region = Region.of(System.getenv("AWS_REGION"));
-    private final DynamoDbClient ddb = DynamoDbClient.builder().region(region).build();
+    private final DynamoDbClient ddb = DynamoDbClient.builder().region(AwsUtils.region()).build();
     private final ObjectMapper jackson = new ObjectMapper();
 
     @Override

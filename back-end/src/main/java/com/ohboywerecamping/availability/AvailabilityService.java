@@ -32,17 +32,17 @@ public class AvailabilityService {
         this.reservationRepository = reservationRepository;
     }
 
-    public CampgroundAvailability findByCampgroundId(final long id, final LocalDate start, final LocalDate end) {
+    public CampgroundAvailability findByCampgroundId(final String id, final LocalDate start, final LocalDate end) {
         final List<Campsite> campsites = campsiteRepository.findByCampgroundId(id);
-        final List<Long> campsiteIds = campsiteIds(campsites.stream());
+        final List<String> campsiteIds = campsiteIds(campsites.stream());
         return findAvailability(id, campsiteIds, start, end);
     }
 
-    private static List<Long> campsiteIds(final Stream<Campsite> campsites) {
+    private static List<String> campsiteIds(final Stream<Campsite> campsites) {
         return campsites.map(Campsite::getId).collect(toList());
     }
 
-    private CampgroundAvailability findAvailability(final long campgroundId, final List<Long> campsiteIds,
+    private CampgroundAvailability findAvailability(final String campgroundId, final List<String> campsiteIds,
                                                     final LocalDate start, final LocalDate end) {
         final LocalDate minDateToReserve = LocalDate.now().plusDays(MIN_DAYS_TO_RESERVE);
         final AvailabilityFunction func = new AvailabilityFunction(minDateToReserve, STATUS_TOO_LATE);
@@ -50,20 +50,20 @@ public class AvailabilityService {
                 .findAvailability(reservationRepository, campgroundId, campsiteIds);
     }
 
-    public CampgroundAvailability findByAreaId(final long id, final LocalDate start, final LocalDate end) {
-        final long campgroundId = areaRepository.findById(id)
+    public CampgroundAvailability findByAreaId(final String id, final LocalDate start, final LocalDate end) {
+        final String campgroundId = areaRepository.findById(id)
                 .map(Area::getCampground)
                 .map(Campground::getId)
-                .orElse(0L);
+                .orElse(null);
         final List<Campsite> campsites = campsiteRepository.findByAreaId(id);
-        final List<Long> campsiteIds = campsiteIds(campsites.stream());
+        final List<String> campsiteIds = campsiteIds(campsites.stream());
         return findAvailability(campgroundId, campsiteIds, start, end);
     }
 
-    public CampgroundAvailability findByCampsiteId(final long id, final LocalDate start, final LocalDate end) {
+    public CampgroundAvailability findByCampsiteId(final String id, final LocalDate start, final LocalDate end) {
         final Optional<Campsite> campsite = campsiteRepository.findById(id);
-        final long campgroundId = campsite.map(Campsite::getCampground).map(Campground::getId).orElse(0L);
-        final List<Long> campsiteIds = campsiteIds(campsite.stream());
+        final String campgroundId = campsite.map(Campsite::getCampground).map(Campground::getId).orElse(null);
+        final List<String> campsiteIds = campsiteIds(campsite.stream());
         return findAvailability(campgroundId, campsiteIds, start, end);
     }
 }

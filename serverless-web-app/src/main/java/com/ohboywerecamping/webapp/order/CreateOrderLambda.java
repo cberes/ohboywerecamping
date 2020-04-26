@@ -1,4 +1,4 @@
-package com.ohboywerecamping.webapp.reservation;
+package com.ohboywerecamping.webapp.order;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -8,7 +8,7 @@ import com.ohboywerecamping.webapp.Cognito;
 
 import static java.util.Collections.singletonMap;
 
-public class CreateReservationLambda implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class CreateOrderLambda implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
         context.getLogger().log("Received event in " + getClass().getSimpleName());

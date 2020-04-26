@@ -21,7 +21,8 @@ aws s3 cp "$source_bundle" $s3_dest
 aws s3 cp cloudformation/main.yml $s3_dest
 
 # decide: create or update
-aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE \
+aws cloudformation list-stacks \
+  --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE UPDATE_ROLLBACK_COMPLETE \
   | jq -r '.StackSummaries[].StackName' | grep -q "^$stack_name$"
 stack_exists=$?
 if [ $stack_exists -eq 0 ]; then

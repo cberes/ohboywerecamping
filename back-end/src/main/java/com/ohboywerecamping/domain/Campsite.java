@@ -10,12 +10,12 @@ public class Campsite {
             return campsite;
         }
 
-        public Builder withId(final long id) {
+        public Builder withId(final String id) {
             campsite.setId(id);
             return this;
         }
 
-        public Builder withCampgroundId(final long campgroundId) {
+        public Builder withCampgroundId(final String campgroundId) {
             final Campground campground = new Campground();
             campground.setId(campgroundId);
             return withCampground(campground);
@@ -26,7 +26,7 @@ public class Campsite {
             return this;
         }
 
-        public Builder withAreaId(final long areaId) {
+        public Builder withAreaId(final String areaId) {
             final Area area = new Area();
             area.setId(areaId);
             return withArea(area);
@@ -98,7 +98,7 @@ public class Campsite {
         }
     }
 
-    private long id;
+    private String id;
 
     private Area area;
 
@@ -132,11 +132,11 @@ public class Campsite {
 
     private Set<Reservation> reservations;
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(final long id) {
+    public void setId(final String id) {
         this.id = id;
     }
 

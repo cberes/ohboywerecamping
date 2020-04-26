@@ -12,8 +12,7 @@ import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 class AvailabilityBuilder {
     private final LocalDate start;
@@ -28,9 +27,10 @@ class AvailabilityBuilder {
     }
 
     CampgroundAvailability findAvailability(final ReservationRepository reservations,
-                                            final long campgroundId,
-                                            final List<Long> campsiteIds) {
-        final Map<Long, List<Reservation>> reservationsByCampsiteId = getReservationsByCampsiteId(reservations);
+                                            final String campgroundId,
+                                            final List<String> campsiteIds) {
+        final var reservationsByCampsiteId = reservations.findByCampsitesBetweenDates(campsiteIds, start, end)
+                .stream().collect(groupingBy(res -> res.getCampsite().getId()));
         final List<CampsiteAvailability> availability = buildAvailability(reservationsByCampsiteId, campsiteIds);
         return CampgroundAvailability.builder()
                 .withCampgroundId(campgroundId)
@@ -38,20 +38,14 @@ class AvailabilityBuilder {
                 .build();
     }
 
-    private Map<Long, List<Reservation>> getReservationsByCampsiteId(final ReservationRepository reservations) {
-        // TODO query for reservations by campsite and date
-        return reservations.findAll().stream()
-                .collect(groupingBy(res -> res.getCampsite().getId()));
-    }
-
-    private List<CampsiteAvailability> buildAvailability(final Map<Long, List<Reservation>> reservationsByCampsiteId,
-                                                         final List<Long> campsiteIds) {
+    private List<CampsiteAvailability> buildAvailability(final Map<String, List<Reservation>> reservationsByCampsiteId,
+                                                         final List<String> campsiteIds) {
         return campsiteIds.stream()
                 .map(id -> buildAvailability(reservationsByCampsiteId.getOrDefault(id, emptyList()), id))
                 .collect(toList());
     }
 
-    private CampsiteAvailability buildAvailability(final List<Reservation> reservations, final long campsiteId) {
+    private CampsiteAvailability buildAvailability(final List<Reservation> reservations, final String campsiteId) {
         final List<DateAvailability> dates = getAvailabilityDates(reservations);
         return CampsiteAvailability.builder()
                 .withId(campsiteId)
@@ -60,36 +54,20 @@ class AvailabilityBuilder {
     }
 
     private List<DateAvailability> getAvailabilityDates(final List<Reservation> reservations) {
-        // XXX: the mapping function is stateful; it will modify the reservations list
-        reservations.sort(Comparator.comparing(Reservation::getStarting));
+        final Map<LocalDate, Reservation> reservationsByDate = reservations.stream()
+                .collect(toMap(Reservation::getDate, Function.identity()));
         return start.datesUntil(end)
-                .map(date -> getAvailability(reservations, date))
+                .map(date -> getAvailability(reservationsByDate.get(date), date))
                 .collect(toList());
     }
 
-    private DateAvailability getAvailability(final List<Reservation> reservations, final LocalDate date) {
-        final Optional<Reservation> reservation = findNextReservation(reservations, date);
-        final Availability availability = reservation.isPresent() ? Availability.RESERVED : statusFunc.apply(date);
+    private DateAvailability getAvailability(final Reservation reservation, final LocalDate date) {
+        final Availability availability = Optional.ofNullable(reservation)
+                .map(res -> Availability.RESERVED)
+                .orElse(statusFunc.apply(date));
         return DateAvailability.builder()
                 .withDate(date)
                 .withStatus(availability)
                 .build();
-    }
-
-    private static Optional<Reservation> findNextReservation(final List<Reservation> reservations,
-                                                             final LocalDate date) {
-        removePastDates(reservations, date);
-        return reservations.isEmpty() || date.isBefore(reservations.get(0).getStarting())
-                ? Optional.empty() : Optional.of(reservations.get(0));
-    }
-
-    private static void removePastDates(final List<Reservation> reservations, final LocalDate date) {
-        while (!reservations.isEmpty() && isBefore(reservations.get(0), date)) {
-            reservations.remove(0);
-        }
-    }
-
-    private static boolean isBefore(final Reservation reservation, final LocalDate date) {
-        return reservation.getEnding().isBefore(date) || reservation.getEnding().isEqual(date);
     }
 }

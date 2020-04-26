@@ -6,7 +6,6 @@ import com.ohboywerecamping.campground.CampgroundRepository;
 import com.ohboywerecamping.campground.InMemoryCampgroundRepository;
 import com.ohboywerecamping.campsite.CampsiteRepository;
 import com.ohboywerecamping.campsite.InMemoryCampsiteRepository;
-import com.ohboywerecamping.customer.InMemoryCustomerRepository;
 import com.ohboywerecamping.domain.*;
 import com.ohboywerecamping.reservation.InMemoryReservationRepository;
 import org.junit.jupiter.api.Test;
@@ -27,11 +26,10 @@ class AvailabilityServiceTest {
     private void createService(final int campsitesToReserve, final LocalDate start) {
         final CampgroundRepository campgrounds = new InMemoryCampgroundRepository();
         final AreaRepository areas = new InMemoryAreaRepository(campgrounds.findAll());
-        final Customer customer = new InMemoryCustomerRepository().findAll().get(0);
         campsiteRepo = new InMemoryCampsiteRepository(areas.findAll());
         campsitesWithReservations = campsiteRepo.findAll().stream().limit(campsitesToReserve).collect(toList());
         service = new AvailabilityService(areas, campsiteRepo,
-                new InMemoryReservationRepository(campsitesWithReservations, customer, start));
+                new InMemoryReservationRepository(campsitesWithReservations, start));
     }
 
     @Test
@@ -40,8 +38,8 @@ class AvailabilityServiceTest {
         final LocalDate end = start.plusDays(9);
 
         createService(0, start);
-        final long id = campsiteRepo.findAll().get(0).getId();
-        final long campgroundId = campsiteRepo.findAll().get(0).getCampground().getId();
+        final String id = campsiteRepo.findAll().get(0).getId();
+        final String campgroundId = campsiteRepo.findAll().get(0).getCampground().getId();
 
         final CampgroundAvailability avail = service.findByCampsiteId(id, start, end.plusDays(1));
         assertThat(avail, notNullValue());
@@ -60,7 +58,7 @@ class AvailabilityServiceTest {
 
         final int siteCount = 2;
         createService(siteCount, start);
-        final long id = campsitesWithReservations.get(0).getCampground().getId();
+        final String id = campsitesWithReservations.get(0).getCampground().getId();
 
         final CampgroundAvailability avail = service.findByCampgroundId(id, start, end.plusDays(1));
         assertThat(avail, notNullValue());
