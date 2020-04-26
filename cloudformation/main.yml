@@ -232,8 +232,6 @@ Resources:
       TableName: !Join ['_', ["RESERVATION", !Ref EnvironmentName]]
       BillingMode: 'PAY_PER_REQUEST'
       AttributeDefinitions:
-        - AttributeName: "ID"
-          AttributeType: "S"
         - AttributeName: "CAMPSITE_ID"
           AttributeType: "S"
         - AttributeName: "RESERVATION_DATE"
@@ -241,17 +239,11 @@ Resources:
         - AttributeName: "ORDER_ID"
           AttributeType: "S"
       KeySchema:
-        - AttributeName: "ID"
+        - AttributeName: "CAMPSITE_ID"
           KeyType: "HASH"
+        - AttributeName: "RESERVATION_DATE"
+          KeyType: "RANGE"
       GlobalSecondaryIndexes:
-        - IndexName: "reservation-by-campsite-id-and-date"
-          KeySchema:
-            - AttributeName: "CAMPSITE_ID"
-              KeyType: "HASH"
-            - AttributeName: "RESERVATION_DATE"
-              KeyType: "RANGE"
-          Projection:
-            ProjectionType: "KEYS_ONLY"
         - IndexName: "reservation-by-order-id"
           KeySchema:
             - AttributeName: "ORDER_ID"
@@ -326,6 +318,9 @@ Resources:
       Handler: com.ohboywerecamping.webapp.availability.ReadAvailabilityLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
+      Environment:
+        Variables:
+          APP_ENV_NAME: !Ref EnvironmentName
       MemorySize: 256 # megabytes
       Role: !GetAtt WebAppLambdaRole.Arn
       Runtime: java11
@@ -345,6 +340,9 @@ Resources:
       Handler: com.ohboywerecamping.webapp.order.ReadOrderLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
+      Environment:
+        Variables:
+          APP_ENV_NAME: !Ref EnvironmentName
       MemorySize: 256 # megabytes
       Role: !GetAtt WebAppLambdaRole.Arn
       Runtime: java11
@@ -364,6 +362,9 @@ Resources:
       Handler: com.ohboywerecamping.webapp.order.CreateOrderLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
+      Environment:
+        Variables:
+          APP_ENV_NAME: !Ref EnvironmentName
       MemorySize: 256 # megabytes
       Role: !GetAtt WebAppLambdaRole.Arn
       Runtime: java11

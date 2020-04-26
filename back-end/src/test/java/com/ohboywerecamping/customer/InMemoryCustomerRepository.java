@@ -1,13 +1,14 @@
 package com.ohboywerecamping.customer;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.ohboywerecamping.domain.Customer;
 import com.ohboywerecamping.test.InMemoryRepository;
 
-public class InMemoryCustomerRepository extends InMemoryRepository<Customer, Long> implements CustomerRepository {
+public class InMemoryCustomerRepository extends InMemoryRepository<Customer, String> implements CustomerRepository {
     public InMemoryCustomerRepository() {
-        super(i -> (long) i, Customer::setId, List.of(customer()));
+        super(Object::toString, Customer::setId, List.of(customer()));
     }
 
     private static Customer customer() {
@@ -17,5 +18,12 @@ public class InMemoryCustomerRepository extends InMemoryRepository<Customer, Lon
         customer.setEmail("gwashington@whitehouse.gov");
         customer.setPhone("2025551234");
         return customer;
+    }
+
+    @Override
+    public Optional<Customer> findByEmail(final String email) {
+        return findAll().stream()
+                .filter(customer -> customer.getEmail().equals(email))
+                .findFirst();
     }
 }

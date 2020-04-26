@@ -49,6 +49,11 @@ public class InMemoryReservationRepository
                 .collect(toList());
     }
 
+    @Override
+    public void store(final Reservation reservation) {
+        save(reservation);
+    }
+
     private static List<Reservation> reservations(final List<Campsite> campsites,
                                                   final LocalDate start) {
         final List<Reservation> reservations = new LinkedList<>();

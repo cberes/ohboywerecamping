@@ -1,5 +1,7 @@
 package com.ohboywerecamping.domain;
 
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 public class Order {
@@ -8,6 +10,8 @@ public class Order {
     private Customer customer;
 
     private Payment payment;
+
+    private ZonedDateTime created = ZonedDateTime.now(ZoneOffset.UTC);
 
     private List<Reservation> reservations;
 
@@ -33,6 +37,17 @@ public class Order {
 
     public void setPayment(final Payment payment) {
         this.payment = payment;
+    }
+
+    public ZonedDateTime getCreated() {
+        return created;
+    }
+
+    public void setCreated(final ZonedDateTime created) {
+        if (created == null) {
+            throw new IllegalArgumentException("cannot be null");
+        }
+        this.created = created;
     }
 
     public List<Reservation> getReservations() {

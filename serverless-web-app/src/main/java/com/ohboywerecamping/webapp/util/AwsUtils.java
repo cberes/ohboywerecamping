@@ -10,4 +10,8 @@ public final class AwsUtils {
     public static Region region() {
         return Region.of(System.getenv("AWS_REGION"));
     }
+
+    public static String environmentName() {
+        return System.getenv("APP_ENV_NAME");
+    }
 }

@@ -7,4 +7,8 @@ public interface Repository<V, K> {
     List<V> findAll();
 
     Optional<V> findById(K id);
+
+    K save(V value);
+
+    void delete(V value);
 }

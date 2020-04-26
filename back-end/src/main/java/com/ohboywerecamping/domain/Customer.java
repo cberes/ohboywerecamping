@@ -1,11 +1,15 @@
 package com.ohboywerecamping.domain;
 
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Set;
 
 public class Customer {
-    private long id;
+    private String id;
 
     private boolean active = true;
+
+    private ZonedDateTime joined = ZonedDateTime.now(ZoneOffset.UTC);
 
     private String firstName;
 
@@ -19,11 +23,11 @@ public class Customer {
 
     private Set<Reservation> reservations;
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(final long id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -33,6 +37,17 @@ public class Customer {
 
     public void setActive(final boolean active) {
         this.active = active;
+    }
+
+    public ZonedDateTime getJoined() {
+        return joined;
+    }
+
+    public void setJoined(final ZonedDateTime joined) {
+        if (joined == null) {
+            throw new IllegalArgumentException("cannot be null");
+        }
+        this.joined = joined;
     }
 
     public String getFirstName() {
