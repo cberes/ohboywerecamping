@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 
-# create our variables
+die () {
+    echo >&2 "$@"
+    exit 1
+}
+
+# read the arguments
 env="$1"
+[ -n "$env" ] || die "Usage: ./deploy-aws ENVIRONMENT"
+
+# create our variables
 stack_name="ohboywerecamping-$env"
 s3_dest=s3://ohboywerecamping/web-app-dist/
 lambda_layer=$(ls -t serverless-web-app/build/distributions/lambda-layer-boneyard-*.zip | head -1)
