@@ -22,9 +22,12 @@ import static com.ohboywerecamping.webapp.util.DynamoUtils.s;
 import static java.util.stream.Collectors.toList;
 
 public class DynamoReservationRepository implements ReservationRepository {
-    private final DynamoDbClient ddb = DynamoDbClient.builder().region(AwsUtils.region()).build();
-
     private final String tableName = "RESERVATION_" + AwsUtils.environmentName();
+    private final DynamoDbClient ddb;
+
+    public DynamoReservationRepository(final DynamoDbClient ddb) {
+        this.ddb = ddb;
+    }
 
     @Override
     public List<Reservation> findByCampsiteBetweenDates(final String campsiteId, final LocalDate start, final LocalDate end) {

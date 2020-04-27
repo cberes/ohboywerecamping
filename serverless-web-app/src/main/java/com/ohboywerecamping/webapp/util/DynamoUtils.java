@@ -1,7 +1,10 @@
 package com.ohboywerecamping.webapp.util;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.Base64;
 import java.util.Collection;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -33,5 +36,23 @@ public final class DynamoUtils {
         return AttributeValue.builder().l(values.stream()
                 .map(value -> s(value))
                 .collect(toList())).build();
+    }
+
+    public static String randomId() {
+        final byte[] buffer = new byte[16];
+        try {
+            SecureRandom.getInstanceStrong().nextBytes(buffer);
+        } catch (NoSuchAlgorithmException e) {
+            // I'll take that risk
+            throw new RuntimeException(e);
+        }
+        return toUrlString(buffer);
+    }
+
+    private static String toUrlString(byte[] buffer) {
+        return Base64.getEncoder().encodeToString(buffer)
+                .replace('+', '-')
+                .replace('/', '_')
+                .replace("=", "");
     }
 }

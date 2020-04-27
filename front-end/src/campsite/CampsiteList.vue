@@ -1,7 +1,7 @@
 <script>
 import moment from 'moment'
 import campgroundService from '../campground/mock-campground-service'
-import availabilityService from './mock-availability-service'
+import availabilityService from './availability-service'
 import CampsiteListItem from './CampsiteListItem'
 
 export default {

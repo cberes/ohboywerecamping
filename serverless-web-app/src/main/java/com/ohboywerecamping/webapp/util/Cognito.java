@@ -1,4 +1,4 @@
-package com.ohboywerecamping.webapp;
+package com.ohboywerecamping.webapp.util;
 
 import java.util.Map;
 import java.util.Optional;

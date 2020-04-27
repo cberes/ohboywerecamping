@@ -13,7 +13,7 @@ export default router => {
 }
 
 function isAuthenticationRequired (to) {
-  return ['pending-reservation'].includes(to.name)
+  return ['pending-reservation', 'orders', 'order'].includes(to.name)
 }
 
 async function guardAuthenticate (router, next) {

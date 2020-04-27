@@ -1,8 +1,9 @@
 import axios from 'axios'
 
 export default {
-  get (url) {
-    return axios.get(url)
+  get (url, headers) {
+    const options = headers && { headers }
+    return axios.get(url, options)
   },
   post (url, request, headers) {
     const options = headers && { headers }

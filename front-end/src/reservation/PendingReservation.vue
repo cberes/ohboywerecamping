@@ -6,8 +6,6 @@ import reservationService from '../reservation/reservation-service'
 
 export default {
   name: 'pending-reservation',
-  props: {
-  },
   data () {
     return {
       campsite: null,
@@ -46,8 +44,7 @@ export default {
       reservationService.createReservation(this.campsite.campsiteId, this.days, authToken)
         .then(result => {
           this.clearPending()
-          // TODO send the user to the reservation (review) page
-          console.log(result)
+          this.$router.push({ name: 'orders', params: { id: result.id } })
         }).catch(err => console.log(err))
     }
   }

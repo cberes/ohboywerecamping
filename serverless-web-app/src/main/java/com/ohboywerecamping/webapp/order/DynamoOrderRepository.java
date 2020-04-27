@@ -1,5 +1,6 @@
 package com.ohboywerecamping.webapp.order;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -17,19 +18,24 @@ import static com.ohboywerecamping.webapp.util.DynamoUtils.s;
 import static java.util.stream.Collectors.toList;
 
 public class DynamoOrderRepository implements OrderRepository {
-    private final DynamoDbClient ddb = DynamoDbClient.builder().region(AwsUtils.region()).build();
-
     private final String tableName = "ORDER_" + AwsUtils.environmentName();
+    private final DynamoDbClient ddb;
+
+    public DynamoOrderRepository(final DynamoDbClient ddb) {
+        this.ddb = ddb;
+    }
 
     @Override
-    public List<Order> findByCustomer(final String customerId) {
+    public List<Order> findByCustomer(final String customerId, final LocalDate start) {
         final QueryRequest request = QueryRequest.builder()
                 .tableName(tableName)
-                .indexName("order-customer-id")
-                .projectionExpression("ID, CUSTOMER_ID")
+                .indexName("order-customer-id-date")
+                .projectionExpression("ID, CUSTOMER_ID, CREATED")
                 .consistentRead(false)
-                .expressionAttributeValues(Map.of(":customerId", s(customerId)))
-                .keyConditionExpression("CUSTOMER_ID = :customerId")
+                .expressionAttributeValues(Map.of(
+                        ":customerId", s(customerId),
+                        ":start", s(start)))
+                .keyConditionExpression("CUSTOMER_ID = :customerId and CREATED >= :start")
                 .build();
         final QueryResponse response = ddb.query(request);
         return response.items().stream().map(item -> fromAttrMap(item)).collect(toList());
@@ -53,7 +59,7 @@ public class DynamoOrderRepository implements OrderRepository {
     public Optional<Order> findById(final String id) {
         final QueryRequest request = QueryRequest.builder()
                 .tableName(tableName)
-                .projectionExpression("ID, CUSTOMER_ID")
+                .projectionExpression("ID, CUSTOMER_ID, CREATED")
                 .consistentRead(false)
                 .expressionAttributeValues(Map.of(":orderId", s(id)))
                 .keyConditionExpression("ID = :orderId")

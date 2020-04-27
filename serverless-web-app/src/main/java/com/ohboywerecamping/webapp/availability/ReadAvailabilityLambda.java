@@ -1,24 +1,31 @@
 package com.ohboywerecamping.webapp.availability;
 
+import java.time.LocalDate;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.ohboywerecamping.webapp.Cognito;
+import com.ohboywerecamping.availability.AvailabilityService;
+import com.ohboywerecamping.domain.CampgroundAvailability;
+import com.ohboywerecamping.webapp.Main;
+import com.ohboywerecamping.webapp.util.JsonUtils;
 
-import static java.util.Collections.singletonMap;
+import static com.ohboywerecamping.webapp.util.Responses.ok;
 
 public class ReadAvailabilityLambda implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+    private final AvailabilityService service = Main.availabilityService();
+
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
         context.getLogger().log("Received event in " + getClass().getSimpleName());
 
-        context.getLogger().log("Authenticated username is  " + Cognito.username(input).orElse(null));
+        final String campsiteId = input.getPathParameters().get("campsiteId");
+        final LocalDate start = LocalDate.parse(input.getQueryStringParameters().get("start"));
+        final LocalDate end = LocalDate.parse(input.getQueryStringParameters().get("end"));
 
-        final APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-        response.setBody("{}");
-        response.setHeaders(singletonMap("Access-Control-Allow-Origin", "*"));
-        response.setStatusCode(201);
-        return response;
+        final CampgroundAvailability availability = service.findByCampsiteId(campsiteId, start, end);
+
+        return ok(JsonUtils.toJson(availability));
     }
 }

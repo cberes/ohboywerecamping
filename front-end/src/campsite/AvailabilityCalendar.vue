@@ -1,6 +1,6 @@
 <script>
 import moment from 'moment'
-import availabilityService from './mock-availability-service'
+import availabilityService from './availability-service'
 import Calendar from '@/common/Calendar'
 
 export default {

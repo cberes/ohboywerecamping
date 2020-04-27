@@ -209,14 +209,18 @@ Resources:
           AttributeType: "S"
         - AttributeName: "CUSTOMER_ID"
           AttributeType: "S"
+        - AttributeName: "CREATED"
+          AttributeType: "S"
       KeySchema:
         - AttributeName: "ID"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "order-customer-id"
+        - IndexName: "order-customer-id-date"
           KeySchema:
             - AttributeName: "CUSTOMER_ID"
               KeyType: "HASH"
+            - AttributeName: "CREATED"
+              KeyType: "RANGE"
           Projection:
             ProjectionType: "KEYS_ONLY"
       TimeToLiveSpecification:
@@ -316,6 +320,28 @@ Resources:
         S3Bucket: !Ref StagingBucketName
         S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
       Handler: com.ohboywerecamping.webapp.availability.ReadAvailabilityLambda::handleRequest
+      Layers:
+        - !Ref RuntimeClassPathLambdaLayer
+      Environment:
+        Variables:
+          APP_ENV_NAME: !Ref EnvironmentName
+      MemorySize: 256 # megabytes
+      Role: !GetAtt WebAppLambdaRole.Arn
+      Runtime: java11
+      Timeout: 120
+      TracingConfig:
+        Mode: Active
+
+  # Lambda Function that reads a list of orders made by a customer
+  ReadOrderListLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Join ['-', [!Ref AppPrefix, 'read-order', !Ref EnvironmentName]]
+      Description: Reads the list of orders for a customer after receiving HTTP GET from front end
+      Code:
+        S3Bucket: !Ref StagingBucketName
+        S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
+      Handler: com.ohboywerecamping.webapp.order.ReadOrderListLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
       Environment:
@@ -518,6 +544,36 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: false
             method.response.header.Access-Control-Allow-Origin: false
 
+  ReadOrderListCORS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: CORS for Read Order List Event
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ResourceId: !Ref OrderAPIResource
+      RestApiId: !Ref CampingRestAPI
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
   ReadOrderCORS:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -594,6 +650,25 @@ Resources:
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
           - { Lambda: !GetAtt ReadAvailabilityLambda.Arn }
+
+  ReadOrderListAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Read Order List Event
+      HttpMethod: 'GET'
+      AuthorizationType: 'COGNITO_USER_POOLS'
+      AuthorizerId: !Ref CampingRestAPIAuthorizer
+      ResourceId: !Ref OrderAPIResource
+      RestApiId: !Ref CampingRestAPI
+      RequestParameters:
+        'method.request.header.Authorization': true
+        'method.request.path.orderId': true
+      Integration:
+        IntegrationHttpMethod: 'POST'
+        Type: 'AWS_PROXY'
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
+          - { Lambda: !GetAtt ReadOrderListLambda.Arn }
 
   ReadOrderAPIMethod:
     Type: AWS::ApiGateway::Method

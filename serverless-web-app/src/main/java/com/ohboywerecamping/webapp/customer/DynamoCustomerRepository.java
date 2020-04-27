@@ -16,9 +16,12 @@ import static com.ohboywerecamping.webapp.util.DynamoUtils.bool;
 import static com.ohboywerecamping.webapp.util.DynamoUtils.s;
 
 public class DynamoCustomerRepository implements CustomerRepository {
-    private final DynamoDbClient ddb = DynamoDbClient.builder().region(AwsUtils.region()).build();
-
     private final String tableName = "CUSTOMER_" + AwsUtils.environmentName();
+    private final DynamoDbClient ddb;
+
+    public DynamoCustomerRepository(final DynamoDbClient ddb) {
+        this.ddb = ddb;
+    }
 
     @Override
     public Optional<Customer> findById(final String id) {
