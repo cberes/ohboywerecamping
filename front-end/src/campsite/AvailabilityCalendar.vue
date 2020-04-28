@@ -34,7 +34,7 @@ export default {
       if (this.availabilityCache[key]) {
         this.availability = this.availabilityCache[key]
       } else {
-        this.loadNewAvailability(campsiteId, firstOfMonth, availabilityService)
+        this.loadNewAvailability(campsiteId, firstOfMonth)
           .then(result => (this.availabilityCache[key] = result))
           .catch(console.log)
       }
@@ -44,7 +44,7 @@ export default {
       const end = firstOfMonth.clone().add({ months: 1 })
       if (start.isBefore(end)) {
         return availabilityService.getCampsite(campsiteId, start, end)
-          .then(result => (this.availability = result.campsites[0].availability))
+          .then(result => (this.availability = result.data.availability.campsites[0].availability))
       } else {
         this.availability = []
         return Promise.reject(new Error('past availability is unavailable'))

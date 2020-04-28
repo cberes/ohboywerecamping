@@ -1,13 +1,14 @@
 import httpService from '@/common/http-service'
+import apiConfig from '@/config/api'
 
-const baseUrl = '/api/orders'
+const baseUrl = apiConfig.url + '/api/orders'
 
 export default {
   getOrders (authToken) {
-    return httpService.get(`${baseUrl}/orders`, { Authorization: authToken })
+    return httpService.get(`${baseUrl}`, { Authorization: authToken })
   },
   getOrder (orderId, authToken) {
-    return httpService.post(`${baseUrl}/orders/${orderId}`,
+    return httpService.post(`${baseUrl}/${orderId}`,
       { Authorization: authToken })
   }
 }

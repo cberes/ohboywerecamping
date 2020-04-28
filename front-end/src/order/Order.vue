@@ -5,7 +5,7 @@ import orderService from './order-service'
 export default {
   name: 'order',
   props: {
-    id: {
+    orderId: {
       type: String,
       required: true
     }
@@ -25,9 +25,9 @@ export default {
     async loadOrder () {
       const session = await authService.currentSession()
       const authToken = session.getIdToken().getJwtToken()
-      const order = await orderService.getOrder(this.id, authToken)
-      this.campsite = order.reservations[0].campsite
-      this.order = order
+      const result = await orderService.getOrder(this.orderId, authToken)
+      this.campsite = result.data.order.reservations[0].campsite
+      this.order = result.data.order
       this.loading = false
     }
   }

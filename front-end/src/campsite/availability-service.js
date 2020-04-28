@@ -1,6 +1,7 @@
 import httpService from '@/common/http-service'
+import apiConfig from '@/config/api'
 
-const baseUrl = '/api/availability'
+const baseUrl = apiConfig.url + '/api/availability'
 
 export default {
   getArea (id, start, end) {

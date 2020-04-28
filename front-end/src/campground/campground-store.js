@@ -1,7 +1,7 @@
 import campgroundService from './mock-campground-service'
 
 // TODO get the actual campground ID
-const campgroundId = 2
+const campgroundId = '1'
 
 const state = {
   campground: null

@@ -6,6 +6,12 @@ import moment from 'moment'
 export default {
   name: 'campsite',
   components: { AvailabilityCalendar },
+  props: {
+    campsiteId: {
+      type: String,
+      required: true
+    }
+  },
   data () {
     return {
       campsite: null,
@@ -16,7 +22,7 @@ export default {
     }
   },
   mounted () {
-    this.loadCampsite(this.$route.params.id)
+    this.loadCampsite(this.campsiteId)
   },
   methods: {
     loadCampsite (id) {

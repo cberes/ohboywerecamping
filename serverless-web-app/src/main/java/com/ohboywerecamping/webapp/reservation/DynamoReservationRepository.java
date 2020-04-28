@@ -57,18 +57,9 @@ public class DynamoReservationRepository implements ReservationRepository {
 
     @Override
     public List<Reservation> findByCampsitesBetweenDates(final Collection<String> campsiteIds, final LocalDate start, final LocalDate end) {
-        final QueryRequest request = QueryRequest.builder()
-                .tableName(tableName)
-                .projectionExpression("ORDER_ID, CAMPSITE_ID, RESERVATION_DATE")
-                .consistentRead(false)
-                .expressionAttributeValues(Map.of(
-                        ":campsiteIds", l(campsiteIds),
-                        ":start", s(start),
-                        ":end", s(end)))
-                .keyConditionExpression("CAMPSITE_ID IN :campsiteIds and (RESERVATION_DATE between :start and :end)")
-                .build();
-        final QueryResponse response = ddb.query(request);
-        return response.items().stream().map(item -> fromAttrMap(item)).collect(toList());
+        return campsiteIds.stream()
+                .flatMap(campsiteId -> findByCampsiteBetweenDates(campsiteId, start, end).stream())
+                .collect(toList());
     }
 
     @Override

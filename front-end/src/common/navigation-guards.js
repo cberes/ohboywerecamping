@@ -35,11 +35,6 @@ async function guardDefault (router, to, next) {
 
     next({ name: 'authenticate' })
   } else {
-    next({
-      name: to.name,
-      params: to.params,
-      replace: true,
-      query: to.query
-    })
+    next()
   }
 }

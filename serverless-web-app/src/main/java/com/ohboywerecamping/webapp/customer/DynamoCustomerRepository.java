@@ -47,16 +47,20 @@ public class DynamoCustomerRepository implements CustomerRepository {
 
     @Override
     public Optional<Customer> findByEmail(final String email) {
+        return findIdByEmail(email).flatMap(this::findById);
+    }
+
+    private Optional<String> findIdByEmail(final String email) {
         final QueryRequest request = QueryRequest.builder()
                 .tableName(tableName)
                 .indexName("customer-email")
-                .projectionExpression("ID, EMAIL, ACTIVE, JOINED")
+                .projectionExpression("ID")
                 .consistentRead(false)
                 .expressionAttributeValues(Map.of(":email", s(email)))
                 .keyConditionExpression("EMAIL = :email")
                 .build();
         final QueryResponse response = ddb.query(request);
-        return response.items().stream().map(item -> fromAttrMap(item)).findFirst();
+        return response.items().stream().map(item -> item.get("ID").s()).findFirst();
     }
 
     @Override

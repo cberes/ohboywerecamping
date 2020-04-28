@@ -9,7 +9,7 @@ export default {
 
 <template>
   <Layout>
-    <Campsite></Campsite>
+    <Campsite :campsiteId="$route.params.id"></Campsite>
   </Layout>
 </template>
 

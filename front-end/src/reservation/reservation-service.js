@@ -1,6 +1,7 @@
 import httpService from '@/common/http-service'
+import apiConfig from '@/config/api'
 
-const baseUrl = '/api/campsites'
+const baseUrl = apiConfig.url + '/api/campsites'
 
 export default {
   getReservations (campsiteId) {

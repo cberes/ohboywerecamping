@@ -41,10 +41,10 @@ export default {
     async confirm () {
       const session = await authService.currentSession()
       const authToken = session.getIdToken().getJwtToken()
-      reservationService.createReservation(this.campsite.campsiteId, this.days, authToken)
+      reservationService.createReservation(this.campsite.id, this.days, authToken)
         .then(result => {
           this.clearPending()
-          this.$router.push({ name: 'orders', params: { id: result.id } })
+          this.$router.push({ name: 'orders', params: { id: result.data.order.id } })
         }).catch(err => console.log(err))
     }
   }

@@ -97,11 +97,17 @@ Resources:
                   - dynamodb:UpdateItem
                 Resource:
                   - !GetAtt CampgroundTable.Arn
+                  - !Join ['/', [!GetAtt CampgroundTable.Arn, 'index/*']]
                   - !GetAtt AreaTable.Arn
+                  - !Join ['/', [!GetAtt AreaTable.Arn, 'index/*']]
                   - !GetAtt CampsiteTable.Arn
+                  - !Join ['/', [!GetAtt CampsiteTable.Arn, 'index/*']]
                   - !GetAtt CustomerTable.Arn
+                  - !Join ['/', [!GetAtt CustomerTable.Arn, 'index/*']]
                   - !GetAtt OrderTable.Arn
+                  - !Join ['/', [!GetAtt OrderTable.Arn, 'index/*']]
                   - !GetAtt ReservationTable.Arn
+                  - !Join ['/', [!GetAtt ReservationTable.Arn, 'index/*']]
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
@@ -336,7 +342,7 @@ Resources:
   ReadOrderListLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Join ['-', [!Ref AppPrefix, 'read-order', !Ref EnvironmentName]]
+      FunctionName: !Join ['-', [!Ref AppPrefix, 'read-order-list', !Ref EnvironmentName]]
       Description: Reads the list of orders for a customer after receiving HTTP GET from front end
       Code:
         S3Bucket: !Ref StagingBucketName
@@ -406,6 +412,14 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CampingRestAPI}/*/*/*'
 
+  ReadOrderListLambdaAPIGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ReadOrderListLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CampingRestAPI}/*/*/*'
+
   ReadOrderLambdaAPIGatewayPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -465,11 +479,39 @@ Resources:
       PathPart: availability
       RestApiId: !Ref CampingRestAPI
 
+  AvailabilityCampgroundAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref AvailabilityAPIResource
+      PathPart: campground
+      RestApiId: !Ref CampingRestAPI
+
+  AvailabilityCampgroundIdAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref AvailabilityCampgroundAPIResource
+      PathPart: '{campgroundId}'
+      RestApiId: !Ref CampingRestAPI
+
+  AvailabilityAreaAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref AvailabilityAPIResource
+      PathPart: area
+      RestApiId: !Ref CampingRestAPI
+
+  AvailabilityAreaIdAPIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref AvailabilityAreaAPIResource
+      PathPart: '{areaId}'
+      RestApiId: !Ref CampingRestAPI
+
   AvailabilityCampsiteAPIResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref AvailabilityAPIResource
-      PathPart: campsites
+      PathPart: campsite
       RestApiId: !Ref CampingRestAPI
 
   AvailabilityCampsiteIdAPIResource:
@@ -504,7 +546,7 @@ Resources:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref CampingRestAPIResource
-      PathPart: order
+      PathPart: orders
       RestApiId: !Ref CampingRestAPI
 
   OrderIdAPIResource:
@@ -514,10 +556,70 @@ Resources:
       PathPart: '{orderId}'
       RestApiId: !Ref CampingRestAPI
 
-  ReadAvailabilityCORS:
+  ReadCampgroundAvailabilityCORS:
     Type: AWS::ApiGateway::Method
     Properties:
-      OperationName: CORS for Read Availability Event
+      OperationName: CORS for Read Campground Availability Event
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ResourceId: !Ref AvailabilityCampgroundIdAPIResource
+      RestApiId: !Ref CampingRestAPI
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
+  ReadAreaAvailabilityCORS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: CORS for Read Area Availability Event
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ResourceId: !Ref AvailabilityAreaIdAPIResource
+      RestApiId: !Ref CampingRestAPI
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
+  ReadCampsiteAvailabilityCORS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: CORS for Read Campsite Availability Event
       HttpMethod: OPTIONS
       AuthorizationType: NONE
       ResourceId: !Ref AvailabilityCampsiteIdAPIResource
@@ -634,7 +736,41 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: false
             method.response.header.Access-Control-Allow-Origin: false
 
-  ReadAvailabilityAPIMethod:
+  ReadCampgroundAvailabilityAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Read Availability Event
+      HttpMethod: 'GET'
+      AuthorizationType: 'NONE'
+      ResourceId: !Ref AvailabilityCampgroundIdAPIResource
+      RestApiId: !Ref CampingRestAPI
+      RequestParameters:
+        'method.request.path.campsiteid': true
+      Integration:
+        IntegrationHttpMethod: 'POST'
+        Type: 'AWS_PROXY'
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
+          - { Lambda: !GetAtt ReadAvailabilityLambda.Arn }
+
+  ReadAreaAvailabilityAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      OperationName: Read Availability Event
+      HttpMethod: 'GET'
+      AuthorizationType: 'NONE'
+      ResourceId: !Ref AvailabilityAreaIdAPIResource
+      RestApiId: !Ref CampingRestAPI
+      RequestParameters:
+        'method.request.path.campsiteid': true
+      Integration:
+        IntegrationHttpMethod: 'POST'
+        Type: 'AWS_PROXY'
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda}/invocations'
+          - { Lambda: !GetAtt ReadAvailabilityLambda.Arn }
+
+  ReadCampsiteAvailabilityAPIMethod:
     Type: AWS::ApiGateway::Method
     Properties:
       OperationName: Read Availability Event
@@ -713,7 +849,9 @@ Resources:
     Properties:
       RestApiId: !Ref CampingRestAPI
     DependsOn:
-      - ReadAvailabilityAPIMethod
+      - ReadCampgroundAvailabilityAPIMethod
+      - ReadAreaAvailabilityAPIMethod
+      - ReadCampsiteAvailabilityAPIMethod
       - ReadOrderAPIMethod
       - CreateOrderAPIMethod
 

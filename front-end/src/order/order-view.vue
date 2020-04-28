@@ -9,7 +9,7 @@ export default {
 
 <template>
   <Layout>
-    <Order></Order>
+    <Order :orderId="$route.params.id"></Order>
   </Layout>
 </template>
 

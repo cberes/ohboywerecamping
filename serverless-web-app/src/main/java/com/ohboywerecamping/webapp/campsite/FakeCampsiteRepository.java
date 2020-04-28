@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.ohboywerecamping.campsite.CampsiteRepository;
+import com.ohboywerecamping.domain.Campground;
 import com.ohboywerecamping.domain.Campsite;
 
 import static java.util.Collections.emptyList;
@@ -17,12 +18,16 @@ public class FakeCampsiteRepository implements CampsiteRepository {
             case "1":
                 return range(1, 3).mapToObj(i -> {
                     Campsite campsite = new Campsite();
+                    campsite.setCampground(new Campground());
+                    campsite.getCampground().setId(id);
                     campsite.setId(Integer.toString(i));
                     return campsite;
                 }).collect(toList());
             case "2":
                 return range(3, 5).mapToObj(i -> {
                     Campsite campsite = new Campsite();
+                    campsite.setCampground(new Campground());
+                    campsite.getCampground().setId(id);
                     campsite.setId(Integer.toString(i));
                     return campsite;
                 }).collect(toList());
@@ -38,12 +43,18 @@ public class FakeCampsiteRepository implements CampsiteRepository {
 
     @Override
     public List<Campsite> findAll() {
-        return emptyList();
+        return range(1, 3).boxed()
+                .map(Object::toString)
+                .map(this::findByCampgroundId)
+                .flatMap(List::stream)
+                .collect(toList());
     }
 
     @Override
     public Optional<Campsite> findById(final String id) {
-        return Optional.empty();
+        return findAll().stream()
+                .filter(campsite -> campsite.getId().equals(id))
+                .findFirst();
     }
 
     @Override

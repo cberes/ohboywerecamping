@@ -10,7 +10,7 @@ export default {
   data () {
     return {
       availability: {},
-      campgroundId: 2, // TODO real campground ID
+      campgroundId: '1', // TODO real campground ID
       campsites: null,
       error: null
     }
@@ -29,7 +29,7 @@ export default {
       const start = moment().add(1, 'days')
       const end = start.clone().add(5, 'days')
       availabilityService.getCampground(this.campgroundId, start, end)
-        .then(result => (this.availability = availabilityService.keyByCampsiteId(result)))
+        .then(result => (this.availability = availabilityService.keyByCampsiteId(result.data.availability)))
         .catch(reason => (this.error = reason.message))
     }
   }

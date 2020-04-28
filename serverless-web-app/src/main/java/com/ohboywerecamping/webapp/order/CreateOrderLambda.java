@@ -33,6 +33,18 @@ public class CreateOrderLambda implements RequestHandler<APIGatewayProxyRequestE
         }
     }
 
+    public static class Response {
+        private final Order order;
+
+        public Response(final Order order) {
+            this.order = order;
+        }
+
+        public Order getOrder() {
+            return order;
+        }
+    }
+
     private final ObjectMapper jackson = Main.jackson();
     private final OrderComponent orders = Main.orderComponent();
     private final CustomerComponent customers = Main.customerComponent();
@@ -56,6 +68,6 @@ public class CreateOrderLambda implements RequestHandler<APIGatewayProxyRequestE
 
         final Order order = orders.create(customer, campsiteId, request.getDays());
 
-        return created(JsonUtils.toJson(order));
+        return created(JsonUtils.toJson(new Response(order)));
     }
 }

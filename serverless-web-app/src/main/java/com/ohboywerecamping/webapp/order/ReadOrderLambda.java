@@ -19,6 +19,18 @@ import static com.ohboywerecamping.webapp.util.Responses.notFound;
 import static com.ohboywerecamping.webapp.util.Responses.ok;
 
 public class ReadOrderLambda implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+    public static class Response {
+        private final Order order;
+
+        public Response(final Order order) {
+            this.order = order;
+        }
+
+        public Order getOrder() {
+            return order;
+        }
+    }
+
     private final OrderComponent orders = Main.orderComponent();
     private final CustomerComponent customers = Main.customerComponent();
 
@@ -40,6 +52,6 @@ public class ReadOrderLambda implements RequestHandler<APIGatewayProxyRequestEve
             return forbidden("{\"message\":\"You are not allowed to access this order\"}");
         }
 
-        return ok(JsonUtils.toJson(order.get()));
+        return ok(JsonUtils.toJson(new Response(order.get())));
     }
 }
