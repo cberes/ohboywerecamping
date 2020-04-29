@@ -17,6 +17,11 @@ Parameters:
     Description: >-
       Name of the business. Will be used in things like the email-verification email.
 
+  DomainName:
+    Type: String
+    Description: >-
+      Domain name at which the static website is available
+
   StagingBucketName:
     Type: String
     Description: >-
@@ -570,7 +575,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
               method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Origin: !If [InLiveEnv, !Sub "'https://${DomainName}'", "'*'"]
             ResponseTemplates:
               application/json: ''
         PassthroughBehavior: WHEN_NO_MATCH
@@ -600,7 +605,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
               method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Origin: !If [InLiveEnv, !Sub "'https://${DomainName}'", "'*'"]
             ResponseTemplates:
               application/json: ''
         PassthroughBehavior: WHEN_NO_MATCH
@@ -630,7 +635,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
               method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Origin: !If [InLiveEnv, !Sub "'https://${DomainName}'", "'*'"]
             ResponseTemplates:
               application/json: ''
         PassthroughBehavior: WHEN_NO_MATCH
@@ -660,7 +665,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
               method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Origin: !If [InLiveEnv, !Sub "'https://${DomainName}'", "'*'"]
             ResponseTemplates:
               application/json: ''
         PassthroughBehavior: WHEN_NO_MATCH
@@ -690,7 +695,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
               method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Origin: !If [InLiveEnv, !Sub "'https://${DomainName}'", "'*'"]
             ResponseTemplates:
               application/json: ''
         PassthroughBehavior: WHEN_NO_MATCH
@@ -720,7 +725,7 @@ Resources:
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
               method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Origin: !If [InLiveEnv, !Sub "'https://${DomainName}'", "'*'"]
             ResponseTemplates:
               application/json: ''
         PassthroughBehavior: WHEN_NO_MATCH

@@ -48,6 +48,11 @@ aws cloudformation $stack_op \
     "UsePreviousValue": false
   },
   {
+    "ParameterKey": "DomainName",
+    "ParameterValue": "ohboywerecamping.com",
+    "UsePreviousValue": false
+  },
+  {
     "ParameterKey": "EnvironmentName",
     "ParameterValue": "'$env'",
     "UsePreviousValue": false
