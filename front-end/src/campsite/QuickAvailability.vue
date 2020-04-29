@@ -20,6 +20,9 @@ export default {
         default:
           return period.status.toLowerCase()
       }
+    },
+    statusTitle (period) {
+      return period.status.replace(/_+/g, ' ')
     }
   }
 }
@@ -30,7 +33,7 @@ export default {
     <div class="availability-period" :key="period.date" v-for="period in availability">
       <div class="header" v-html="formatDate(period)"></div>
       <div class="body" :class="statusClass(period)">
-        <abbr :title="period.status">{{ formatStatus(period) }}</abbr>
+        <abbr :title="statusTitle(period)">{{ formatStatus(period) }}</abbr>
       </div>
     </div>
   </div>

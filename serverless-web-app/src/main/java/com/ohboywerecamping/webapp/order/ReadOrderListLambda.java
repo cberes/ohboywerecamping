@@ -46,7 +46,8 @@ public class ReadOrderListLambda implements RequestHandler<APIGatewayProxyReques
     }
 
     private static LocalDate startDate(final APIGatewayProxyRequestEvent input) {
-        return Optional.ofNullable(input.getQueryStringParameters().get("start"))
+        return Optional.ofNullable(input.getQueryStringParameters())
+                .map(params -> params.get("start"))
                 .filter(s -> !s.isBlank())
                 .map(LocalDate::parse)
                 .orElse(LocalDate.MIN);

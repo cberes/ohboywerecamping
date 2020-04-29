@@ -48,7 +48,7 @@ public class ReadOrderLambda implements RequestHandler<APIGatewayProxyRequestEve
         }
 
         final Optional<Customer> customer = Cognito.username(input).flatMap(customers::findCustomerByEmail);
-        if (customer.isEmpty() || customer.get().getId().equals(order.get().getCustomer().getId())) {
+        if (customer.isEmpty() || !customer.get().getId().equals(order.get().getCustomer().getId())) {
             return forbidden("{\"message\":\"You are not allowed to access this order\"}");
         }
 

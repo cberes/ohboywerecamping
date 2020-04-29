@@ -43,7 +43,7 @@ public class DynamoOrderRepository implements OrderRepository {
 
     private static Order fromAttrMap(final Map<String, AttributeValue> item) {
         Order order = new Order();
-        order.setId(item.get("ORDER_ID").s());
+        order.setId(item.get("ID").s());
         order.setCustomer(new Customer());
         order.getCustomer().setId(item.get("CUSTOMER_ID").s());
         order.setCreated(ZonedDateTime.parse(item.get("CREATED").s()));

@@ -22,7 +22,7 @@ export default {
   methods: {
     loadCampsites () {
       campgroundService.getCampsites(this.campgroundId)
-        .then(result => (this.campsites = result))
+        .then(result => (this.campsites = result.data))
         .catch(reason => (this.error = reason.message))
     },
     loadAvailability () {

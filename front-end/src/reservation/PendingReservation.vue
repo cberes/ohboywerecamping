@@ -35,7 +35,7 @@ export default {
     ...mapActions('reservation', ['clearPending']),
     loadCampsite () {
       return campsiteService.getCampsite(this.pending.campsiteId)
-        .then(result => (this.campsite = result))
+        .then(result => (this.campsite = result.data))
         .catch(reason => (this.error = reason.message))
     },
     async confirm () {

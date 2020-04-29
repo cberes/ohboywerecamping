@@ -1,6 +1,6 @@
 export default {
   getCampsite (id) {
-    return Promise.resolve(this.buildCampsite(id))
+    return Promise.resolve({ data: this.buildCampsite(id) })
   },
 
   buildCampsite (id) {

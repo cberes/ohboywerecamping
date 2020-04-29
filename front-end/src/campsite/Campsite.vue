@@ -27,7 +27,7 @@ export default {
   methods: {
     loadCampsite (id) {
       campsiteService.getCampsite(id)
-        .then(result => (this.campsite = result))
+        .then(result => (this.campsite = result.data))
         .catch(reason => (this.error = reason.message))
     },
     reserve () {

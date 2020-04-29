@@ -20,8 +20,8 @@ const actions = {
     }
 
     return campgroundService.getCampground(campgroundId).then(result => {
-      commit('SET_CURRENT_CAMPGROUND', result)
-      return result
+      commit('SET_CURRENT_CAMPGROUND', result.data)
+      return result.data
     })
   }
 }
