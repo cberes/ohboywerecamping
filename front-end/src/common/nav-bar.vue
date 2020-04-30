@@ -4,12 +4,12 @@ import authService from '@/auth/auth-service'
 export default {
   data () {
     return {
-      currentSession: null
+      signedIn: null
     }
   },
   created () {
     authService.currentSession()
-      .then(session => (this.currentSession = session))
+      .then(session => (this.signedIn = !!session))
   }
 }
 </script>
@@ -25,8 +25,14 @@ export default {
     <el-menu-item index="/map">
       <i class="el-icon-picture"></i> Campsite Map
     </el-menu-item>
-    <el-menu-item index="/orders" v-if="currentSession">
+    <el-menu-item index="/orders" v-if="signedIn">
       <i class="el-icon-s-order"></i> Orders
+    </el-menu-item>
+    <el-menu-item index="/signout" v-if="signedIn">
+      <i class="el-icon-user"></i> Sign out
+    </el-menu-item>
+    <el-menu-item index="/authenticate" v-if="!signedIn">
+      <i class="el-icon-user-solid"></i> Sign in
     </el-menu-item>
   </el-menu>
 </template>

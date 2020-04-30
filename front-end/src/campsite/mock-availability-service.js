@@ -2,14 +2,16 @@ import moment from 'moment'
 
 export default {
   getArea (id, start, end) {
-    return Promise.resolve({})
+    return Promise.resolve({ data: {} })
   },
 
   getCampground (id, start, end) {
     const campsites = [1, 2]
     return Promise.resolve({
-      campgroundId: id,
-      campsites: campsites.map(c => this.mockCampsite(c, start, end))
+      data : {
+        campgroundId: id,
+        campsites: campsites.map(c => this.mockCampsite(c, start, end))
+      }
     })
   },
 
@@ -44,8 +46,10 @@ export default {
 
   getCampsite (id, start, end) {
     return Promise.resolve({
-      campgroundId: 1,
-      campsites: [this.mockCampsite(id, start, end)]
+      data: {
+        campgroundId: 1,
+        campsites: [this.mockCampsite(id, start, end)]
+      }
     })
   },
 

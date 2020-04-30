@@ -1,6 +1,7 @@
 <script>
 import { mapActions, mapState } from 'vuex'
 import { AmplifyEventBus } from 'aws-amplify-vue'
+import _ from 'lodash'
 
 export default {
   name: 'authenticate',
@@ -18,6 +19,9 @@ export default {
       }
     })
   },
+  beforeDestroy () {
+    AmplifyEventBus.$off('authState')
+  },
   computed: {
     ...mapState('auth', ['redirectFrom'])
   },
@@ -25,8 +29,9 @@ export default {
     ...mapActions('auth', ['clearRedirect']),
     redirectAfterLogin () {
       if (this.redirectFrom) {
+        const next = _.cloneDeep(this.redirectFrom)
         this.clearRedirect()
-        this.$router.push(this.redirectFrom)
+        this.$router.push(next)
       } else {
         this.$router.push({ name: 'home' })
       }

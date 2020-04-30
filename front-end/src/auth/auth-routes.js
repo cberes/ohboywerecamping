@@ -10,6 +10,11 @@ export default [
     component: require('./signin-view').default
   },
   {
+    path: '/signout',
+    name: 'signout',
+    component: require('./signout-view').default
+  },
+  {
     path: '/verify',
     name: 'verify',
     component: require('./verify-view').default
