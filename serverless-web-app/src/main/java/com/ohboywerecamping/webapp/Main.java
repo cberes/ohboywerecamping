@@ -17,16 +17,19 @@ public final class Main {
     }
 
     static void run(final String handlerName) throws Exception {
-        final Map<String, Supplier<RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent>>> handlers =
-                Map.of(
-                        "read_availability", ReadAvailabilityLambda::new,
-                        "create_order", CreateOrderLambda::new,
-                        "read_order", ReadOrderLambda::new,
-                        "read_order_list", ReadOrderListLambda::new);
-
-        final var handler = handlers.get(handlerName);
-        if (handler != null) {
+        final var handler = handlers().get(handlerName);
+        if (handler == null) {
+            System.err.println("Unknown handler: " + handlerName);
+        } else {
             Lambda.handleEvents(handler.get()::handleRequest, APIGatewayProxyRequestEvent.class);
         }
+    }
+
+    private static Map<String, Supplier<RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent>>> handlers() {
+        return Map.of(
+                "read_availability", ReadAvailabilityLambda::new,
+                "create_order", CreateOrderLambda::new,
+                "read_order", ReadOrderLambda::new,
+                "read_order_list", ReadOrderListLambda::new);
     }
 }

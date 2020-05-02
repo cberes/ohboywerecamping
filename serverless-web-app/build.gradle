@@ -56,13 +56,13 @@ task lambdaLayerBundle(type: Zip) {
 
 task copyDeps(type: Copy) {
     from configurations.runtimeClasspath
-    into 'build/dependencies'
+    into "$buildDir/dependencies"
 }
 
 def nativeImageClasspath() {
     def libsDir = new File(buildDir, 'libs')
     def depsDir = new File(buildDir, 'dependencies')
-    def allFiles = libsDir.listFiles() + depsDir.listFiles()
+    def allFiles = (libsDir.listFiles() ?: []) + (depsDir.listFiles() ?: [])
     def allFilesOnContainer = allFiles.collect { it.absolutePath.replace(projectDir.absolutePath, '/work') }
     return allFilesOnContainer.join(':')
 }

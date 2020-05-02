@@ -5,6 +5,8 @@ readonly classpath=$2
 readonly mainclass=$3
 readonly outfile=$4
 
+mkdir -p $workdir/build/lambda
+
 docker run --rm -v $workdir:/work oracle/graalvm-ce:20.0.0-java11 \
   /usr/bin/bash -c "gu install -Nn native-image &&
   native-image --no-server \
@@ -18,5 +20,4 @@ docker run --rm -v $workdir:/work oracle/graalvm-ce:20.0.0-java11 \
   --initialize-at-build-time=org.apache.http.protocol.HttpContext,org.apache.http.HttpClientConnection,org.apache.http.pool.ConnPoolControl,org.apache.http.conn.routing.HttpRoute,org.apache.http.conn.HttpClientConnectionManager,org.apache.http.conn.ConnectionRequest \
   -H:-AllowVMInspection \
   -R:-InstallSegfaultHandler &&
-  mkdir -p /work/build/lambda &&
   cp $outfile /work/build/lambda/"
