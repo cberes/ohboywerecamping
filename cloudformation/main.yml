@@ -358,7 +358,7 @@ Resources:
       Code:
         S3Bucket: !Ref StagingBucketName
         S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
-      Handler: com.ohboywerecamping.webapp.order.ReadOrderListLambda::handleRequest
+      Handler: com.ohboywerecamping.webapp.Lambdas$LiveReadOrderListLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
       Environment:
@@ -380,7 +380,7 @@ Resources:
       Code:
         S3Bucket: !Ref StagingBucketName
         S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
-      Handler: com.ohboywerecamping.webapp.order.ReadOrderLambda::handleRequest
+      Handler: com.ohboywerecamping.webapp.Lambdas$LiveReadOrderLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
       Environment:
@@ -402,7 +402,7 @@ Resources:
       Code:
         S3Bucket: !Ref StagingBucketName
         S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
-      Handler: com.ohboywerecamping.webapp.order.CreateOrderLambda::handleRequest
+      Handler: com.ohboywerecamping.webapp.Lambdas$LiveCreateOrderLambda::handleRequest
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
       Environment:

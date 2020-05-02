@@ -23,9 +23,9 @@ public final class Main {
 
     private static Map<String, Supplier<RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent>>> handlers() {
         return Map.of(
-                "read_availability", Lambdas::readAvailability,
-                "create_order", Lambdas::createOrder,
-                "read_order", Lambdas::readOrder,
-                "read_order_list", Lambdas::readOrderList);
+                "read_availability", Lambdas.LiveReadAvailabilityLambda::new,
+                "create_order", Lambdas.LiveCreateOrderLambda::new,
+                "read_order", Lambdas.LiveReadOrderLambda::new,
+                "read_order_list", Lambdas.LiveReadOrderListLambda::new);
     }
 }
