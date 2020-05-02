@@ -138,9 +138,18 @@ Resources:
       AttributeDefinitions:
         - AttributeName: "ID"
           AttributeType: "S"
+        - AttributeName: "HOSTNAME"
+          AttributeType: "S"
       KeySchema:
         - AttributeName: "ID"
           KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "CAMPGROUNDS_BY_HOSTNAME"
+          KeySchema:
+            - AttributeName: "HOSTNAME"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
 
   AreaTable:
     Type: AWS::DynamoDB::Table
@@ -157,7 +166,7 @@ Resources:
         - AttributeName: "ID"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "areas-by-campground-id"
+        - IndexName: "AREAS_BY_CAMPGROUND_ID"
           KeySchema:
             - AttributeName: "CAMPGROUND_ID"
               KeyType: "HASH"
@@ -181,13 +190,13 @@ Resources:
         - AttributeName: "ID"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "campsites-by-campground-id"
+        - IndexName: "CAMPSITES_BY_CAMPGROUND_ID"
           KeySchema:
             - AttributeName: "CAMPGROUND_ID"
               KeyType: "HASH"
           Projection:
             ProjectionType: "KEYS_ONLY"
-        - IndexName: "campsites-by-area-id"
+        - IndexName: "CAMPSITES_BY_AREA_ID"
           KeySchema:
             - AttributeName: "AREA_ID"
               KeyType: "HASH"
@@ -208,7 +217,7 @@ Resources:
         - AttributeName: "ID"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "customer-email"
+        - IndexName: "CUSTOMERS_BY_EMAIL"
           KeySchema:
             - AttributeName: "EMAIL"
               KeyType: "HASH"
@@ -232,7 +241,7 @@ Resources:
         - AttributeName: "ID"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        - IndexName: "order-customer-id-date"
+        - IndexName: "ORDERS_BY_CUSTOMER_AND_DATE"
           KeySchema:
             - AttributeName: "CUSTOMER_ID"
               KeyType: "HASH"
@@ -265,7 +274,7 @@ Resources:
         - AttributeName: "RESERVATION_DATE"
           KeyType: "RANGE"
       GlobalSecondaryIndexes:
-        - IndexName: "reservation-by-order-id"
+        - IndexName: "RESERVATIONS_BY_ORDER_ID"
           KeySchema:
             - AttributeName: "ORDER_ID"
               KeyType: "HASH"

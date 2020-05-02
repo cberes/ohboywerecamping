@@ -53,7 +53,7 @@ public class DynamoCustomerRepository implements CustomerRepository {
     private Optional<String> findIdByEmail(final String email) {
         final QueryRequest request = QueryRequest.builder()
                 .tableName(tableName)
-                .indexName("customer-email")
+                .indexName("CUSTOMERS_BY_EMAIL")
                 .projectionExpression("ID")
                 .consistentRead(false)
                 .expressionAttributeValues(Map.of(":email", s(email)))

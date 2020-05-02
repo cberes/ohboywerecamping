@@ -29,7 +29,7 @@ public class DynamoOrderRepository implements OrderRepository {
     public List<Order> findByCustomer(final String customerId, final LocalDate start) {
         final QueryRequest request = QueryRequest.builder()
                 .tableName(tableName)
-                .indexName("order-customer-id-date")
+                .indexName("ORDERS_BY_CUSTOMER_AND_DATE")
                 .projectionExpression("ID, CUSTOMER_ID, CREATED")
                 .consistentRead(false)
                 .expressionAttributeValues(Map.of(

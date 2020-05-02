@@ -66,7 +66,7 @@ public class DynamoReservationRepository implements ReservationRepository {
     public List<Reservation> findByOrder(final String orderId) {
         final QueryRequest request = QueryRequest.builder()
                 .tableName(tableName)
-                .indexName("reservation-by-order-id")
+                .indexName("RESERVATIONS_BY_ORDER_ID")
                 .projectionExpression("ORDER_ID, CAMPSITE_ID, RESERVATION_DATE")
                 .consistentRead(false)
                 .expressionAttributeValues(Map.of(":orderId", s(orderId)))
