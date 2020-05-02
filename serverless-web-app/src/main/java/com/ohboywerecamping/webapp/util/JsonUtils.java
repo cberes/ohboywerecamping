@@ -2,7 +2,7 @@ package com.ohboywerecamping.webapp.util;
 
 import java.io.IOException;
 
-import com.ohboywerecamping.webapp.Main;
+import com.ohboywerecamping.webapp.Singletons;
 
 public final class JsonUtils {
     private JsonUtils() {
@@ -11,7 +11,7 @@ public final class JsonUtils {
 
     public static String toJson(final Object obj) {
         try {
-            return Main.jackson().writeValueAsString(obj);
+            return Singletons.jackson().writeValueAsString(obj);
         } catch (IOException e) {
             throw new RuntimeException("error creating JSON", e);
         }

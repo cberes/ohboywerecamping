@@ -33,6 +33,10 @@ public final class Responses {
         return response(404, body);
     }
 
+    public static APIGatewayProxyResponseEvent serverError(final String body) {
+        return response(500, body);
+    }
+
     private static APIGatewayProxyResponseEvent response(final int status, final String body) {
         final APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
         response.setBody(body);

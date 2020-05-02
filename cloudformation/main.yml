@@ -40,6 +40,12 @@ Parameters:
       The file name of the bundle for the lambda functions; this is a .zip file produced by
       the build. This template assumes it's been staged in s3://[StagingBucketName]/web-app-dist
 
+  SourceRuntimeBundleName:
+    Type: String
+    Description: >-
+      The file name of the bundle of a GraalVM runtime and lambda functions. This is a .zip file
+      produced by the build. This template assumes it's been staged in s3://[StagingBucketName]/web-app-dist
+
 Conditions:
 
   InLiveEnv: !Equals [!Ref EnvironmentName, live]
@@ -329,8 +335,8 @@ Resources:
       Description: Reads a campsite's availability after receiving HTTP GET from front end
       Code:
         S3Bucket: !Ref StagingBucketName
-        S3Key: !Join ['/', ['web-app-dist', !Ref LambdaBundleName]]
-      Handler: com.ohboywerecamping.webapp.availability.ReadAvailabilityLambda::handleRequest
+        S3Key: !Join ['/', ['web-app-dist', !Ref SourceRuntimeBundleName]]
+      Handler: read_availability
       Layers:
         - !Ref RuntimeClassPathLambdaLayer
       Environment:
@@ -338,7 +344,7 @@ Resources:
           APP_ENV_NAME: !Ref EnvironmentName
       MemorySize: 256 # megabytes
       Role: !GetAtt WebAppLambdaRole.Arn
-      Runtime: java11
+      Runtime: provided
       Timeout: 120
       TracingConfig:
         Mode: Active

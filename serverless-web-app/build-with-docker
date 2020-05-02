@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+readonly workdir=$1
+readonly classpath=$2
+readonly mainclass=$3
+readonly outfile=$4
+
+docker run --rm -v $workdir:/work oracle/graalvm-ce:20.0.0-java11 \
+  /usr/bin/bash -c "gu install -Nn native-image &&
+  native-image --no-server \
+  --class-path $classpath \
+  --allow-incomplete-classpath \
+  --enable-all-security-services --enable-http --enable-https \
+  -H:Name=$outfile \
+  -H:Class=$mainclass \
+  -H:ReflectionConfigurationFiles=/work/graal.json \
+  -H:DynamicProxyConfigurationFiles=/work/proxy.json \
+  --initialize-at-build-time=org.apache.http.protocol.HttpContext,org.apache.http.HttpClientConnection,org.apache.http.pool.ConnPoolControl,org.apache.http.conn.routing.HttpRoute,org.apache.http.conn.HttpClientConnectionManager,org.apache.http.conn.ConnectionRequest \
+  -H:-AllowVMInspection \
+  -R:-InstallSegfaultHandler &&
+  mkdir -p /work/build/lambda &&
+  cp $outfile /work/build/lambda/"

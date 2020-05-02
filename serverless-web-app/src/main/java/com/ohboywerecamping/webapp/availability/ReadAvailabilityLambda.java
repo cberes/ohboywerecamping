@@ -1,7 +1,6 @@
 package com.ohboywerecamping.webapp.availability;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -9,7 +8,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.ohboywerecamping.availability.AvailabilityService;
 import com.ohboywerecamping.domain.CampgroundAvailability;
-import com.ohboywerecamping.webapp.Main;
+import com.ohboywerecamping.webapp.Singletons;
 import com.ohboywerecamping.webapp.util.JsonUtils;
 
 import static com.ohboywerecamping.webapp.util.Responses.badRequest;
@@ -32,7 +31,7 @@ public class ReadAvailabilityLambda implements RequestHandler<APIGatewayProxyReq
     private static final String CAMPGROUND = "campgroundId";
     private static final String CAMPSITE = "campsiteId";
 
-    private final AvailabilityService service = Main.availabilityService();
+    private final AvailabilityService service = Singletons.availabilityService();
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {

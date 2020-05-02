@@ -6,7 +6,6 @@ version projectVersion
 apply plugin: 'java'
 apply plugin: 'idea'
 
-
 sourceCompatibility = 11
 
 repositories {
@@ -20,8 +19,12 @@ dependencies {
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
     implementation 'com.amazonaws:aws-lambda-java-events:2.2.7'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.8'
+    //implementation 'org.apache.httpcomponents:httpclient:4.5.6'
+    runtimeOnly 'org.slf4j:jcl-over-slf4j:1.7.25'
+    runtimeOnly 'org.slf4j:jul-to-slf4j:1.7.25'
+    runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.8.2'
     runtimeOnly 'com.amazonaws:aws-lambda-java-log4j2:1.1.0'
-    testImplementation('org.junit.jupiter:junit-jupiter:5.6.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'
     testImplementation 'org.hamcrest:hamcrest:2.2'
     testImplementation 'org.mockito:mockito-core:3.3.3'
 }
@@ -48,6 +51,38 @@ task lambdaLayerBundle(type: Zip) {
     archiveFileName = "lambda-layer-${bundleSuffix()}.zip"
     into('java/lib') {
         from configurations.runtimeClasspath
+    }
+}
+
+task copyDeps(type: Copy) {
+    from configurations.runtimeClasspath
+    into 'build/dependencies'
+}
+
+def nativeImageClasspath() {
+    def libsDir = new File(buildDir, 'libs')
+    def depsDir = new File(buildDir, 'dependencies')
+    def allFiles = libsDir.listFiles() + depsDir.listFiles()
+    def allFilesOnContainer = allFiles.collect { it.absolutePath.replace(projectDir.absolutePath, '/work') }
+    return allFilesOnContainer.join(':')
+}
+
+task nativeImage(type: Exec) {
+    dependsOn build, copyDeps
+
+    workingDir projectDir
+
+    commandLine './build-with-docker', projectDir.absolutePath, nativeImageClasspath(),
+            'com.ohboywerecamping.webapp.Main', 'bootstrap'
+}
+
+task zipImage(type: Zip) {
+    dependsOn nativeImage
+
+    archiveFileName = "source-runtime-${bundleSuffix()}.zip"
+
+    from ("$buildDir/lambda/") {
+        include 'bootstrap'
     }
 }
 
