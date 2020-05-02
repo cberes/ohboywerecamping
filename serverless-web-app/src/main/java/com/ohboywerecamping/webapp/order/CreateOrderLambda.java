@@ -14,7 +14,6 @@ import com.ohboywerecamping.domain.Customer;
 import com.ohboywerecamping.domain.Order;
 import com.ohboywerecamping.order.OrderComponent;
 import com.ohboywerecamping.webapp.util.Cognito;
-import com.ohboywerecamping.webapp.Singletons;
 import com.ohboywerecamping.webapp.util.JsonUtils;
 
 import static com.ohboywerecamping.webapp.util.Responses.badRequest;
@@ -45,9 +44,15 @@ public class CreateOrderLambda implements RequestHandler<APIGatewayProxyRequestE
         }
     }
 
-    private final ObjectMapper jackson = Singletons.jackson();
-    private final OrderComponent orders = Singletons.orderComponent();
-    private final CustomerComponent customers = Singletons.customerComponent();
+    private final ObjectMapper jackson;
+    private final OrderComponent orders;
+    private final CustomerComponent customers;
+
+    public CreateOrderLambda(final ObjectMapper jackson, final OrderComponent orders, final CustomerComponent customers) {
+        this.jackson = jackson;
+        this.orders = orders;
+        this.customers = customers;
+    }
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {

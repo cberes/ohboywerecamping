@@ -12,7 +12,6 @@ import com.ohboywerecamping.customer.CustomerComponent;
 import com.ohboywerecamping.domain.Customer;
 import com.ohboywerecamping.domain.Order;
 import com.ohboywerecamping.order.OrderComponent;
-import com.ohboywerecamping.webapp.Singletons;
 import com.ohboywerecamping.webapp.util.Cognito;
 import com.ohboywerecamping.webapp.util.JsonUtils;
 
@@ -31,8 +30,13 @@ public class ReadOrderListLambda implements RequestHandler<APIGatewayProxyReques
         }
     }
 
-    private final OrderComponent orders = Singletons.orderComponent();
-    private final CustomerComponent customers = Singletons.customerComponent();
+    private final OrderComponent orders;
+    private final CustomerComponent customers;
+
+    public ReadOrderListLambda(final OrderComponent orders, final CustomerComponent customers) {
+        this.orders = orders;
+        this.customers = customers;
+    }
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {

@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ohboywerecamping.webapp.util.JsonUtils;
 import com.ohboywerecamping.webapp.util.Responses;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -52,7 +53,7 @@ public final class Lambda {
 
     private static final Logger logger = LoggerFactory.getLogger(Lambda.class);
 
-    private static final ObjectMapper jackson = Singletons.jackson();
+    private static final ObjectMapper jackson = JsonUtils.jackson();
 
     private Lambda() {
         throw new UnsupportedOperationException("cannot instantiate " + getClass());
