@@ -1,16 +1,22 @@
 package com.ohboywerecamping.webapp;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohboywerecamping.webapp.util.Responses;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.utils.IoUtils;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -30,6 +36,22 @@ public final class Lambda {
         }
     }
 
+    private static class LambdaContext<E> {
+        final CloseableHttpClient http;
+        final String runtimeApiHost;
+        final BiFunction<E, Context, ?> handler;
+
+        public LambdaContext(final CloseableHttpClient http,
+                             final String runtimeApiHost,
+                             final BiFunction<E, Context, ?> handler) {
+            this.http = http;
+            this.runtimeApiHost = runtimeApiHost;
+            this.handler = handler;
+        }
+    }
+
+    private static final Logger logger = LoggerFactory.getLogger(Lambda.class);
+
     private static final ObjectMapper jackson = Singletons.jackson();
 
     private Lambda() {
@@ -38,51 +60,47 @@ public final class Lambda {
 
     public static <E> void handleEvents(final BiFunction<E, Context, ?> handler,
                                         final Class<E> type) throws IOException {
-        handleEvents(handler, type, System.getenv("AWS_LAMBDA_RUNTIME_API"));
+        handleEvents(handler, type, System.getenv("AWS_LAMBDA_RUNTIME_API"), HttpClients::createDefault);
     }
 
     public static <E> void handleEvents(final BiFunction<E, Context, ?> handler,
                                         final Class<E> type,
-                                        final String runtimeApiHost) throws IOException {
+                                        final String runtimeApiHost,
+                                        final Supplier<CloseableHttpClient> httpFactory) throws IOException {
         final String nextEventUrl = eventUrl(runtimeApiHost);
-        final URL url = new URL(nextEventUrl);
-        while (true) {
-            handleEvent(handler, type, runtimeApiHost, url);
+        try (CloseableHttpClient http = httpFactory.get()) {
+            final LambdaContext<E> context = new LambdaContext<>(http, runtimeApiHost, handler);
+            while (true) {
+                handleEvent(context, type, nextEventUrl);
+            }
         }
     }
 
-    private static <E> void handleEvent(final BiFunction<E, Context, ?> handler,
+    private static <E> void handleEvent(final LambdaContext<E> lc,
                                         final Class<E> type,
-                                        final String runtimeApiHost,
-                                        final URL url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("Accept", "application/json");
-
-        connection.setDoInput(true);
-        connection.setDoOutput(false);
-        connection.setUseCaches(false);
-
-        final E event = jackson.readValue(connection.getInputStream(), type);
-        final long deadlineMs = connection.getHeaderFieldLong("Lambda-Runtime-Deadline-Ms", 0L);
-        final String requestId = connection.getHeaderField("Lambda-Runtime-Aws-Request-Id");
-        final String functionArn = connection.getHeaderField("Lambda-Runtime-Invoked-Function-Arn");
-        final Context context = new DefaultContext(requestId, functionArn, deadlineMs);
-        handleEvent(handler, event, context, runtimeApiHost);
+                                        final String url) throws IOException {
+        HttpGet get = new HttpGet(url);
+        get.setHeader("Accept", "application/json");
+        try (CloseableHttpResponse response = lc.http.execute(get)) {
+            final E event = jackson.readValue(response.getEntity().getContent(), type);
+            final long deadlineMs = Long.parseLong(response.getFirstHeader("Lambda-Runtime-Deadline-Ms").getValue());
+            final String requestId = response.getFirstHeader("Lambda-Runtime-Aws-Request-Id").getValue();
+            final String functionArn = response.getFirstHeader("Lambda-Runtime-Invoked-Function-Arn").getValue();
+            final Context context = new DefaultContext(requestId, functionArn, deadlineMs);
+            handleEvent(lc, event, context);
+        }
     }
 
-    private static <E> void handleEvent(final BiFunction<E, Context, ?> handler,
+    private static <E> void handleEvent(final LambdaContext<E> lc,
                                         final E input,
-                                        final Context context,
-                                        final String runtimeApiHost) throws IOException {
+                                        final Context context) throws IOException {
         try {
-            final Object response = handler.apply(input, context);
-            handleRequest(context.getAwsRequestId(), response, runtimeApiHost);
+            final Object response = lc.handler.apply(input, context);
+            handleRequest(lc, context.getAwsRequestId(), response);
         } catch (Exception e) {
-            context.getLogger().log(e.getMessage());
-            e.printStackTrace();
-            handleRequest(context.getAwsRequestId(), serverError(e), runtimeApiHost);
-            handleError(context.getAwsRequestId(), e, runtimeApiHost);
+            logger.error("Failed to handle request " + context.getAwsRequestId(), e);
+            handleRequest(lc, context.getAwsRequestId(), serverError(e));
+            handleError(lc, context.getAwsRequestId(), e);
         }
     }
 
@@ -90,35 +108,34 @@ public final class Lambda {
         return Responses.serverError(jackson.writeValueAsString(new LambdaError(e)));
     }
 
-    private static void handleRequest(final String requestId, final Object response, final String runtimeApiHost) throws IOException {
+    private static void handleRequest(final LambdaContext<?> lc,
+                                      final String requestId,
+                                      final Object response) throws IOException {
         final String responseBody = jackson.writeValueAsString(response);
-        sendResponse(responseUrl(runtimeApiHost, requestId), responseBody, emptyMap());
+        sendResponse(lc, responseBody, emptyMap(), responseUrl(lc.runtimeApiHost, requestId));
     }
 
-    private static void handleError(final String requestId, Exception e, final String runtimeApiHost) throws IOException {
+    private static void handleError(final LambdaContext<?> lc,
+                                    final String requestId,
+                                    final Exception e) throws IOException {
         final String responseBody = jackson.writeValueAsString(new LambdaError(e));
-        sendResponse(invocationErrorUrl(runtimeApiHost, requestId), responseBody,
-                singletonMap("Lambda-Runtime-Function-Error-Type", "Unhandled"));
+        sendResponse(lc, responseBody, singletonMap("Lambda-Runtime-Function-Error-Type", "Unhandled"),
+                invocationErrorUrl(lc.runtimeApiHost, requestId));
     }
 
-    private static void sendResponse(final String url, final String responseBody, final Map<String, String> headers) throws IOException {
-        final byte[] responseBytes = responseBody.getBytes(StandardCharsets.UTF_8);
-        final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Language", "en-US");
-        connection.setRequestProperty("Content-Length", Integer.toString(responseBytes.length));
-        connection.setRequestProperty("Content-Type", "application/json");
-        headers.forEach(connection::setRequestProperty);
-
-        connection.setDoInput(true);
-        connection.setDoOutput(true);
-        connection.setUseCaches(false);
-
-        try (OutputStream requestStream = connection.getOutputStream()) {
-            requestStream.write(responseBytes, 0, responseBytes.length);
+    private static void sendResponse(final LambdaContext<?> lc,
+                                     final String responseBody,
+                                     final Map<String, String> headers,
+                                     final String url) throws IOException {
+        HttpPost post = new HttpPost(url);
+        post.setHeader("Content-Language", "en-US");
+        post.setHeader("Content-Type", "application/json");
+        headers.forEach(post::setHeader);
+        post.setEntity(new StringEntity(responseBody));
+        try (CloseableHttpResponse response = lc.http.execute(post)) {
+            logger.info("Lambda response: {} [{}]",
+                    IoUtils.toUtf8String(response.getEntity().getContent()), response.getStatusLine());
         }
-
-        connection.getInputStream();
     }
 
     private static String eventUrl(final String host) {
