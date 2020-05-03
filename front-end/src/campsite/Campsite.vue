@@ -1,5 +1,5 @@
 <script>
-import campsiteService from './mock-campsite-service'
+import campsiteService from './campsite-service'
 import AvailabilityCalendar from './AvailabilityCalendar'
 import moment from 'moment'
 
@@ -27,7 +27,7 @@ export default {
   methods: {
     loadCampsite (id) {
       campsiteService.getCampsite(id)
-        .then(result => (this.campsite = result.data))
+        .then(result => (this.campsite = result.data.campsite))
         .catch(reason => (this.error = reason.message))
     },
     reserve () {

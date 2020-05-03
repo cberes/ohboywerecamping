@@ -1,20 +1,26 @@
 export default {
   getCampground (id) {
+    return this.getCurrentCampground()
+  },
+
+  getCurrentCampground () {
     return Promise.resolve({
       data: {
-        id: '1',
-        active: true,
-        name: 'Campground X',
-        description: 'Campground X is a really fun place. It lets you get away ' +
-        'from the toil of everyday life. The toil of everyday life where too ' +
-        'many things at work are misspelled. Located in the deepest, darkest ' +
-        'depths of scenic Lake Ontario.'
+        campground: {
+          id: '1',
+          active: true,
+          name: 'Campground X',
+          description: 'Campground X is a really fun place. It lets you get away ' +
+          'from the toil of everyday life. The toil of everyday life where too ' +
+          'many things at work are misspelled. Located in the deepest, darkest ' +
+          'depths of scenic Lake Ontario.'
+        }
       }
     })
   },
 
   getCampgrounds () {
-    return Promise.resolve({ data: [] })
+    return Promise.resolve({ data: { campgrounds: [] } })
   },
 
   getCampsites (id) {

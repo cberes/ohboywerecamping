@@ -1,7 +1,7 @@
 <script>
 import { mapActions, mapState } from 'vuex'
 import authService from '../auth/auth-service'
-import campsiteService from '../campsite/mock-campsite-service'
+import campsiteService from '../campsite/campsite-service'
 import reservationService from '../reservation/reservation-service'
 
 export default {
@@ -35,7 +35,7 @@ export default {
     ...mapActions('reservation', ['clearPending']),
     loadCampsite () {
       return campsiteService.getCampsite(this.pending.campsiteId)
-        .then(result => (this.campsite = result.data))
+        .then(result => (this.campsite = result.data.campsite))
         .catch(reason => (this.error = reason.message))
     },
     async confirm () {

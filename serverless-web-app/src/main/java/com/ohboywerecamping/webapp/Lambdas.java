@@ -1,6 +1,7 @@
 package com.ohboywerecamping.webapp;
 
 import com.ohboywerecamping.webapp.availability.ReadAvailabilityLambda;
+import com.ohboywerecamping.webapp.campground.ReadCampgroundLambda;
 import com.ohboywerecamping.webapp.order.CreateOrderLambda;
 import com.ohboywerecamping.webapp.order.ReadOrderLambda;
 import com.ohboywerecamping.webapp.order.ReadOrderListLambda;
@@ -10,6 +11,12 @@ public final class Lambdas {
     public static class LiveReadAvailabilityLambda extends ReadAvailabilityLambda {
         public LiveReadAvailabilityLambda() {
             super(Singletons.availabilityService());
+        }
+    }
+
+    public static class LiveReadCampgroundLambda extends ReadCampgroundLambda {
+        public LiveReadCampgroundLambda() {
+            super(Singletons.campgroundComponent());
         }
     }
 

@@ -1,7 +1,4 @@
-import campgroundService from './mock-campground-service'
-
-// TODO get the actual campground ID
-const campgroundId = '1'
+import campgroundService from './campground-service'
 
 const state = {
   campground: null
@@ -19,9 +16,9 @@ const actions = {
       return Promise.resolve(state.campground)
     }
 
-    return campgroundService.getCampground(campgroundId).then(result => {
-      commit('SET_CURRENT_CAMPGROUND', result.data)
-      return result.data
+    return campgroundService.getCurrentCampground().then(result => {
+      commit('SET_CURRENT_CAMPGROUND', result.data.campground)
+      return result.data.campground
     })
   }
 }

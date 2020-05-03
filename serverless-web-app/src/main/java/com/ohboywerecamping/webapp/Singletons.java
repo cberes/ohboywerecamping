@@ -2,6 +2,8 @@ package com.ohboywerecamping.webapp;
 
 import com.ohboywerecamping.area.AreaRepository;
 import com.ohboywerecamping.availability.AvailabilityService;
+import com.ohboywerecamping.campground.CampgroundComponent;
+import com.ohboywerecamping.campground.CampgroundComponentImpl;
 import com.ohboywerecamping.campground.CampgroundRepository;
 import com.ohboywerecamping.campsite.CampsiteRepository;
 import com.ohboywerecamping.customer.CustomerComponent;
@@ -30,6 +32,7 @@ final class Singletons {
     private OrderRepository orders;
     private ReservationRepository reservations;
     private AvailabilityService availabilityService;
+    private CampgroundComponent campgroundComponent;
     private CustomerComponent customerComponent;
     private OrderComponent orderComponent;
 
@@ -83,6 +86,13 @@ final class Singletons {
             instance.availabilityService = new AvailabilityService(null, campsites(), reservations());
         }
         return instance.availabilityService;
+    }
+
+    static CampgroundComponent campgroundComponent() {
+        if (instance.campgroundComponent == null) {
+            instance.campgroundComponent = new CampgroundComponentImpl(campgrounds());
+        }
+        return instance.campgroundComponent;
     }
 
     static CustomerComponent customerComponent() {

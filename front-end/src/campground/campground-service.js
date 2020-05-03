@@ -8,6 +8,11 @@ export default {
     return httpService.get(url)
   },
 
+  getCurrentCampground () {
+    const url = baseUrl.substring(0, baseUrl.length - 1)
+    return httpService.get(url)
+  },
+
   getCampgrounds () {
     return httpService.get(baseUrl)
   },

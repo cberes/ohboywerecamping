@@ -1,6 +1,7 @@
 <script>
+import { mapActions } from 'vuex'
 import moment from 'moment'
-import campgroundService from '../campground/mock-campground-service'
+import campgroundService from '../campground/campground-service'
 import availabilityService from './availability-service'
 import CampsiteListItem from './CampsiteListItem'
 
@@ -10,25 +11,27 @@ export default {
   data () {
     return {
       availability: {},
-      campgroundId: '1', // TODO real campground ID
       campsites: null,
       error: null
     }
   },
   mounted () {
-    this.loadCampsites()
-    this.loadAvailability()
+    this.fetchCampground(campground => {
+      this.loadCampsites(campground.id)
+      this.loadAvailability(campground.id)
+    })
   },
   methods: {
-    loadCampsites () {
-      campgroundService.getCampsites(this.campgroundId)
-        .then(result => (this.campsites = result.data))
+    ...mapActions('campgrounds', ['fetchCampground']),
+    loadCampsites (campgroundId) {
+      campgroundService.getCampsites(campgroundId)
+        .then(result => (this.campsites = result.data.campsites))
         .catch(reason => (this.error = reason.message))
     },
-    loadAvailability () {
+    loadAvailability (campgroundId) {
       const start = moment().add(1, 'days')
       const end = start.clone().add(5, 'days')
-      availabilityService.getCampground(this.campgroundId, start, end)
+      availabilityService.getCampground(campgroundId, start, end)
         .then(result => (this.availability = availabilityService.keyByCampsiteId(result.data.availability)))
         .catch(reason => (this.error = reason.message))
     }
