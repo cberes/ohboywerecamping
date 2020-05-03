@@ -11,6 +11,7 @@ import com.ohboywerecamping.order.OrderComponent;
 import com.ohboywerecamping.order.OrderComponentImpl;
 import com.ohboywerecamping.order.OrderRepository;
 import com.ohboywerecamping.reservation.ReservationRepository;
+import com.ohboywerecamping.webapp.campground.DynamoCampgroundRepository;
 import com.ohboywerecamping.webapp.campsite.FakeCampsiteRepository;
 import com.ohboywerecamping.webapp.customer.DynamoCustomerRepository;
 import com.ohboywerecamping.webapp.order.DynamoOrderRepository;
@@ -40,6 +41,13 @@ final class Singletons {
             instance.ddb = DynamoDbClient.builder().region(AwsUtils.region()).build();
         }
         return instance.ddb;
+    }
+
+    static CampgroundRepository campgrounds() {
+        if (instance.campgrounds == null) {
+            instance.campgrounds = new DynamoCampgroundRepository(dynamo());
+        }
+        return instance.campgrounds;
     }
 
     static CampsiteRepository campsites() {

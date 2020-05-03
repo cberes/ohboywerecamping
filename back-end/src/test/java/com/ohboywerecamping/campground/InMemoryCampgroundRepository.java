@@ -1,6 +1,7 @@
 package com.ohboywerecamping.campground;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.ohboywerecamping.domain.Campground;
 import com.ohboywerecamping.test.InMemoryRepository;
@@ -31,6 +32,11 @@ public class InMemoryCampgroundRepository
         item.setName(name);
         item.setDescription(description);
         return item;
+    }
+
+    @Override
+    public Optional<Campground> findByHostname(final String hostname) {
+        return findAll().stream().filter(it -> it.getHostname().equals(hostname)).findFirst();
     }
 
     public static InMemoryCampgroundRepository empty() {

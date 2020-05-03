@@ -7,6 +7,8 @@ public class Campground {
 
     private boolean active = true;
 
+    private String hostname;
+
     private String name;
 
     private String description;
@@ -29,6 +31,14 @@ public class Campground {
 
     public void setActive(final boolean active) {
         this.active = active;
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public void setHostname(final String hostname) {
+        this.hostname = hostname;
     }
 
     public String getName() {
