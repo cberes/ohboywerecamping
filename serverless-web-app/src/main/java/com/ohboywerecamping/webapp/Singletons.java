@@ -5,6 +5,8 @@ import com.ohboywerecamping.availability.AvailabilityService;
 import com.ohboywerecamping.campground.CampgroundComponent;
 import com.ohboywerecamping.campground.CampgroundComponentImpl;
 import com.ohboywerecamping.campground.CampgroundRepository;
+import com.ohboywerecamping.campsite.CampsiteComponent;
+import com.ohboywerecamping.campsite.CampsiteComponentImpl;
 import com.ohboywerecamping.campsite.CampsiteRepository;
 import com.ohboywerecamping.customer.CustomerComponent;
 import com.ohboywerecamping.customer.CustomerComponentImpl;
@@ -14,7 +16,7 @@ import com.ohboywerecamping.order.OrderComponentImpl;
 import com.ohboywerecamping.order.OrderRepository;
 import com.ohboywerecamping.reservation.ReservationRepository;
 import com.ohboywerecamping.webapp.campground.DynamoCampgroundRepository;
-import com.ohboywerecamping.webapp.campsite.FakeCampsiteRepository;
+import com.ohboywerecamping.webapp.campsite.DynamoCampsiteRepository;
 import com.ohboywerecamping.webapp.customer.DynamoCustomerRepository;
 import com.ohboywerecamping.webapp.order.DynamoOrderRepository;
 import com.ohboywerecamping.webapp.reservation.DynamoReservationRepository;
@@ -33,6 +35,7 @@ final class Singletons {
     private ReservationRepository reservations;
     private AvailabilityService availabilityService;
     private CampgroundComponent campgroundComponent;
+    private CampsiteComponent campsiteComponent;
     private CustomerComponent customerComponent;
     private OrderComponent orderComponent;
 
@@ -55,7 +58,7 @@ final class Singletons {
 
     static CampsiteRepository campsites() {
         if (instance.campsites == null) {
-            instance.campsites = new FakeCampsiteRepository();
+            instance.campsites = new DynamoCampsiteRepository(dynamo());
         }
         return instance.campsites;
     }
@@ -93,6 +96,13 @@ final class Singletons {
             instance.campgroundComponent = new CampgroundComponentImpl(campgrounds());
         }
         return instance.campgroundComponent;
+    }
+
+    static CampsiteComponent campsiteComponent() {
+        if (instance.campsiteComponent == null) {
+            instance.campsiteComponent = new CampsiteComponentImpl(campsites());
+        }
+        return instance.campsiteComponent;
     }
 
     static CustomerComponent customerComponent() {

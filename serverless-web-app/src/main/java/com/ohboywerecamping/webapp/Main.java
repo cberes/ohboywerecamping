@@ -25,6 +25,8 @@ public final class Main {
         return Map.of(
                 "read_availability", Lambdas.LiveReadAvailabilityLambda::new,
                 "read_campground", Lambdas.LiveReadCampgroundLambda::new,
+                "read_campsite", Lambdas.LiveReadCampsiteLambda::new,
+                "read_campsite_list", Lambdas.LiveReadCampsiteListLambda::new,
                 "create_order", Lambdas.LiveCreateOrderLambda::new,
                 "read_order", Lambdas.LiveReadOrderLambda::new,
                 "read_order_list", Lambdas.LiveReadOrderListLambda::new);

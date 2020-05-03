@@ -26,7 +26,7 @@ test {
 
 checkstyle {
     checkstyleMain.exclude '**/module-info.java'
-    configDir = file("$rootDir/config/checkstyle")
+    configDirectory = file("$rootDir/config/checkstyle")
     toolVersion = '8.2'
     maxErrors = 0
     maxWarnings = 0
