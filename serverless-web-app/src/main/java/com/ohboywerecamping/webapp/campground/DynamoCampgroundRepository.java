@@ -26,8 +26,9 @@ public class DynamoCampgroundRepository implements CampgroundRepository {
     public Optional<Campground> findById(final String id) {
         final QueryRequest request = QueryRequest.builder()
                 .tableName(tableName)
-                .projectionExpression("ID, ACTIVE, HOSTNAME, NAME, DESCRIPTION")
+                .projectionExpression("ID, ACTIVE, HOSTNAME, #name, DESCRIPTION")
                 .consistentRead(false)
+                .expressionAttributeNames(Map.of("#name", "NAME"))
                 .expressionAttributeValues(Map.of(":campgroundId", s(id)))
                 .keyConditionExpression("ID = :campgroundId")
                 .build();
@@ -83,6 +84,7 @@ public class DynamoCampgroundRepository implements CampgroundRepository {
         final PutItemRequest request = PutItemRequest.builder()
                 .tableName(tableName)
                 .item(toAttrMap(campground))
+                .expressionAttributeNames(Map.of("#name", "NAME"))
                 .build();
         ddb.putItem(request);
     }
@@ -92,7 +94,7 @@ public class DynamoCampgroundRepository implements CampgroundRepository {
                 "ID", s(campground.getId()),
                 "ACTIVE", bool(campground.isActive()),
                 "HOSTNAME", s(campground.getHostname()),
-                "NAME", s(campground.getName()),
+                "#name", s(campground.getName()),
                 "DESCRIPTION", s(campground.getDescription()));
     }
 
@@ -104,9 +106,9 @@ public class DynamoCampgroundRepository implements CampgroundRepository {
                 .expressionAttributeValues(Map.of(
                         ":active", attrMap.get("ACTIVE"),
                         ":hostname", attrMap.get("HOSTNAME"),
-                        ":name", attrMap.get("NAME"),
+                        ":name", attrMap.get("#name"),
                         ":description", attrMap.get("DESCRIPTION")))
-                .updateExpression("set ACTIVE = :active, HOSTNAME = :hostname, NAME = :name, DESCRIPTION = :description")
+                .updateExpression("set ACTIVE = :active, HOSTNAME = :hostname, #name = :name, DESCRIPTION = :description")
                 .build();
         ddb.updateItem(request);
     }

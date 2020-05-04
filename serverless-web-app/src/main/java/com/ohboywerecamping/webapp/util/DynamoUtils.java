@@ -20,8 +20,16 @@ public final class DynamoUtils {
         return AttributeValue.builder().bool(b).build();
     }
 
+    public static AttributeValue n(final int i) {
+        return AttributeValue.builder().n(Integer.toString(i)).build();
+    }
+
     public static AttributeValue s(final String s) {
         return AttributeValue.builder().s(s).build();
+    }
+
+    public static AttributeValue s(final Enum<?> v) {
+        return AttributeValue.builder().s(v.name()).build();
     }
 
     public static AttributeValue s(final LocalDate d) {
